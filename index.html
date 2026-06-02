@@ -278,17 +278,21 @@
 
   function selectAC(i) {
     if (acInput && acItems[i] !== undefined) {
-      acInput.value = acItems[i];
+      const inp = acInput;          // hideAC()の前に参照を保存
+      inp.value = acItems[i];
       saveProduct(acItems[i]);
       hideAC();
-      acInput.focus();
+      inp.focus();
     }
   }
 
   // ドロップダウンのクリック／タッチ
-  acEl.addEventListener('mousedown', e => { e.preventDefault(); }); // blurを防ぐ
-  acEl.addEventListener('touchstart', e => { e.preventDefault(); }, { passive: false });
-  acEl.addEventListener('click', e => {
+  acEl.addEventListener('mousedown', e => { e.preventDefault(); }); // blur防止（PC）
+  acEl.addEventListener('touchend', e => {                          // タップ選択（スマホ）
+    const item = e.target.closest('.ac-item');
+    if (item) { e.preventDefault(); selectAC(Number(item.dataset.i)); }
+  });
+  acEl.addEventListener('click', e => {                             // クリック選択（PC）
     const item = e.target.closest('.ac-item');
     if (item) selectAC(Number(item.dataset.i));
   });
