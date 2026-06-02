@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注文書</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #1a56a0; --primary-light: #e8f0fb; --border: #b8c8e0;
+      --bg: #f0f4fa; --white: #fff; --text: #1a1a2e; --muted: #6b7a99;
+      --danger: #c0392b; --success: #1e7e34; --radius: 10px;
+    }
+    body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:12px; }
+    .container { max-width:1000px; margin:0 auto; }
+
+    /* Header */
+    .header { background:var(--primary); color:#fff; border-radius:var(--radius) var(--radius) 0 0; padding:16px 20px 14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+    .header-left { display:flex; align-items:center; gap:10px; }
+    .header h1 { font-size:20px; font-weight:700; letter-spacing:.06em; }
+    .header-date { font-size:12px; opacity:.8; }
+
+    /* Card */
+    .card { background:var(--white); border-radius:0 0 var(--radius) var(--radius); box-shadow:0 2px 14px rgba(26,86,160,.10); overflow:hidden; }
+
+    /* Toolbar */
+    .toolbar { display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1.5px solid var(--primary-light); flex-wrap:wrap; background:var(--primary-light); }
+    .toolbar-title { font-size:12px; font-weight:700; color:var(--primary); letter-spacing:.06em; margin-right:auto; }
+    .btn { display:inline-flex; align-items:center; gap:5px; padding:8px 16px; font-size:13px; font-weight:700; border:none; border-radius:7px; cursor:pointer; font-family:inherit; transition:background .15s,transform .1s; white-space:nowrap; }
+    .btn:active { transform:scale(.96); }
+    .btn-primary   { background:var(--primary); color:#fff; }
+    .btn-primary:hover { background:#154a8a; }
+    .btn-secondary { background:#fff; color:var(--primary); border:1.5px solid var(--primary); }
+    .btn-secondary:hover { background:var(--primary-light); }
+    .btn-danger  { background:#fff; color:var(--danger); border:1.5px solid var(--danger); }
+    .btn-danger:hover  { background:#fdecea; }
+    .btn-export  { background:#0f7a3c; color:#fff; }
+    .btn-export:hover  { background:#0a5e2d; }
+    .btn-image   { background:#7c3aed; color:#fff; }
+    .btn-image:hover   { background:#5b21b6; }
+    .btn-sm { padding:5px 11px; font-size:12px; border-radius:5px; }
+
+    /* Table */
+    .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    table { width:100%; border-collapse:collapse; min-width:648px; table-layout:fixed; }
+    col.col-no   { width:36px; }
+    col.col-code { width:88px; }
+    col.col-name { width:110px; }
+    col.col-item { width:240px; }
+    col.col-qty  { width:64px; }
+    col.col-note { width:110px; }
+    thead th { background:var(--primary); color:#fff; font-size:12px; font-weight:700; padding:10px 8px; text-align:center; white-space:nowrap; position:sticky; top:0; z-index:2; }
+    tbody tr { transition:background .1s; }
+    tbody tr:nth-child(odd)  { background:#fff; }
+    tbody tr:nth-child(even) { background:#f5f8fd; }
+    tbody tr:hover { background:#dce8fb; }
+    td { padding:5px; vertical-align:middle; border-bottom:1px solid #e4eaf4; }
+    td.td-no { text-align:center; font-size:11px; color:var(--muted); font-weight:700; }
+    input[type="text"], input[type="number"] {
+      border:1.5px solid #d0daea; border-radius:6px; padding:7px 9px; font-size:14px;
+      font-family:inherit; background:transparent; color:var(--text); width:100%;
+      transition:border-color .15s,box-shadow .15s,background .15s; -webkit-appearance:none;
+    }
+    input:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 2.5px rgba(26,86,160,.13); background:#fff; }
+    input.invalid { border-color:var(--danger) !important; }
+    input.code-input { text-align:center; letter-spacing:.12em; font-weight:700; }
+    input.qty-input  { text-align:center; }
+
+    /* Saved list */
+    .saved-panel { margin-top:14px; background:var(--white); border-radius:var(--radius); box-shadow:0 2px 10px rgba(26,86,160,.08); overflow:hidden; }
+    .saved-header { padding:11px 16px; background:var(--primary-light); font-size:12px; font-weight:700; color:var(--primary); letter-spacing:.06em; }
+    .saved-item { display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid #e8eef6; flex-wrap:wrap; }
+    .saved-item:last-child { border-bottom:none; }
+    .saved-item-info { flex:1; min-width:120px; }
+    .saved-item-title { font-size:13px; font-weight:700; }
+    .saved-item-meta  { font-size:11px; color:var(--muted); margin-top:2px; }
+    .saved-actions { display:flex; gap:6px; }
+    .empty-msg { padding:22px; text-align:center; color:var(--muted); font-size:13px; }
+
+
+    /* Toast */
+    #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(70px); background:#1a1a2e; color:#fff; padding:11px 24px; border-radius:28px; font-size:13px; font-weight:700; box-shadow:0 4px 20px rgba(0,0,0,.22); transition:transform .28s cubic-bezier(.22,1,.36,1),opacity .28s; opacity:0; z-index:9999; pointer-events:none; }
+    #toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+    #toast.success { background:var(--success); }
+    #toast.error   { background:var(--danger); }
+
+    /* Print */
+    @media print {
+      body { background:#fff; padding:0; }
+      .no-print { display:none !important; }
+      .card { box-shadow:none; border-radius:0; }
+      .header { border-radius:0; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+      thead th { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+      .table-wrapper { overflow:visible; }
+      table { min-width:unset; }
+      input { border:1px solid #ccc !important; box-shadow:none !important; background:#fff !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left"><span style="font-size:24px">📋</span><h1>注文書</h1></div>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+  <div class="card">
+    <div class="toolbar no-print">
+      <span class="toolbar-title">注文入力</span>
+      <button class="btn btn-secondary" onclick="addRows(5)">＋ 5行追加</button>
+      <button class="btn btn-primary"   onclick="saveSheet()">💾 保存</button>
+      <button class="btn btn-export"    onclick="exportCSV()">📤 CSV出力</button>
+      <button class="btn btn-image"     onclick="exportImage()">🖼 画像で送る</button>
+      <button class="btn btn-secondary" onclick="printSheet()">🖨 印刷</button>
+      <button class="btn btn-danger"    onclick="clearSheet()">🗑 クリア</button>
+    </div>
+    <div class="table-wrapper">
+      <table id="orderTable">
+        <colgroup>
+          <col class="col-no"><col class="col-code"><col class="col-name">
+          <col class="col-item"><col class="col-qty"><col class="col-note">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>No.</th><th>顧客<br>コード</th><th>歯科医院名</th>
+            <th>商品名</th><th>個数</th><th>備考</th>
+          </tr>
+        </thead>
+        <tbody id="orderBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 予測変換用 datalist -->
+  <datalist id="productList"></datalist>
+
+  <!-- Saved list -->
+  <div class="saved-panel no-print">
+    <div class="saved-header">📁 保存済み注文書</div>
+    <div id="savedList"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+  const STORAGE_KEY  = 'dental_orders_v2';
+  const PRODUCTS_KEY = 'dental_products';
+  const DEFAULT_ROWS = 20;
+
+  // ── 初期化
+  function init() {
+    setHeaderDate();
+    buildRows(DEFAULT_ROWS);
+    renderProductList();
+    renderSaved();
+  }
+
+  function setHeaderDate() {
+    const now = new Date();
+    document.getElementById('headerDate').textContent =
+      `${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日`;
+  }
+
+  // ── 行生成
+  function buildRows(count) {
+    const tbody = document.getElementById('orderBody');
+    const start = tbody.rows.length + 1;
+    for (let i = 0; i < count; i++) tbody.appendChild(makeRow(start + i));
+  }
+
+  function makeRow(n) {
+    const tr = document.createElement('tr');
+    tr.dataset.row = n;
+    tr.innerHTML = `
+      <td class="td-no">${n}</td>
+      <td><input type="text" class="code-input" placeholder="00000" maxlength="5" inputmode="numeric" autocomplete="off"></td>
+      <td><input type="text" placeholder="医院名" autocomplete="off"></td>
+      <td><input type="text" class="item-input" placeholder="商品名" list="productList" autocomplete="off"></td>
+      <td><input type="number" class="qty-input" placeholder="0" min="0" max="9999" inputmode="numeric"></td>
+      <td><input type="text" placeholder="備考" autocomplete="off"></td>
+    `;
+    // 顧客コード：数字のみ
+    const codeInput = tr.querySelector('.code-input');
+    codeInput.addEventListener('input', () => {
+      codeInput.value = codeInput.value.replace(/[^0-9]/g, '').slice(0, 5);
+      validateCodeInput(codeInput);
+    });
+    // 商品名：フォーカスを外れたとき候補に追加
+    const itemInput = tr.querySelector('.item-input');
+    itemInput.addEventListener('blur', () => {
+      const v = itemInput.value.trim();
+      if (v) saveProduct(v);
+    });
+    return tr;
+  }
+
+  function validateCodeInput(input) {
+    const v = input.value;
+    input.classList.toggle('invalid', v.length > 0 && v.length !== 5);
+  }
+
+  function addRows(n) { buildRows(n); showToast(`${n}行追加しました`); }
+
+  // ── 予測変換（商品名候補）
+  function getProducts() {
+    try { return JSON.parse(localStorage.getItem(PRODUCTS_KEY)) || []; }
+    catch { return []; }
+  }
+  function saveProduct(name) {
+    let list = getProducts();
+    if (list.includes(name)) return;        // 重複しない
+    list.unshift(name);
+    list = list.slice(0, 200);              // 最大200件
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(list));
+    renderProductList();
+  }
+  function renderProductList() {
+    const dl = document.getElementById('productList');
+    dl.innerHTML = getProducts().map(p => `<option value="${escHtml(p)}">`).join('');
+  }
+
+  // ── データ取得 / セット
+  function getRows() {
+    return [...document.querySelectorAll('#orderBody tr')].map(tr => {
+      const inp = tr.querySelectorAll('input');
+      return { code:inp[0].value.trim(), clinic:inp[1].value.trim(), item:inp[2].value.trim(), qty:inp[3].value, note:inp[4].value.trim() };
+    });
+  }
+  function setRows(rows) {
+    while (document.getElementById('orderBody').rows.length < rows.length)
+      buildRows(rows.length - document.getElementById('orderBody').rows.length);
+    rows.forEach((r, i) => {
+      const inp = document.getElementById('orderBody').rows[i].querySelectorAll('input');
+      inp[0].value = r.code||''; inp[1].value = r.clinic||''; inp[2].value = r.item||'';
+      inp[3].value = r.qty||'';  inp[4].value = r.note||'';
+    });
+  }
+
+  // ── バリデーション
+  function validateAll() {
+    let hasEntry = false, codeError = false;
+    document.querySelectorAll('#orderBody tr').forEach(tr => {
+      const inp = tr.querySelectorAll('input');
+      const code=inp[0].value.trim(), clinic=inp[1].value.trim(), item=inp[2].value.trim(), qty=inp[3].value;
+      if (code||clinic||item||qty) hasEntry = true;
+      if (code && code.length !== 5) { inp[0].classList.add('invalid'); codeError = true; }
+    });
+    if (!hasEntry)  { showToast('1行以上入力してください','error'); return false; }
+    if (codeError)  { showToast('顧客コードは5桁で入力してください','error'); return false; }
+    return true;
+  }
+
+  // ── 保存
+  function saveSheet() {
+    if (!validateAll()) return;
+    const rows = getRows().filter(r => r.code||r.clinic||r.item||r.qty);
+    if (!rows.length) { showToast('入力がありません','error'); return; }
+    // 商品名を候補に追加
+    rows.forEach(r => { if (r.item) saveProduct(r.item); });
+    const saved = loadSaved();
+    const now = new Date();
+    saved.unshift({ id:Date.now(), date:`${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日`, rows });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    renderSaved();
+    showToast('保存しました','success');
+  }
+
+  function loadSaved() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]; } catch { return []; } }
+
+  function renderSaved() {
+    const saved = loadSaved();
+    const el = document.getElementById('savedList');
+    if (!saved.length) { el.innerHTML='<div class="empty-msg">保存済みの注文書はありません</div>'; return; }
+    el.innerHTML = '';
+    saved.forEach(s => {
+      const clinics = [...new Set(s.rows.filter(r=>r.clinic).map(r=>r.clinic))].slice(0,3).join('、');
+      const div = document.createElement('div');
+      div.className = 'saved-item';
+      div.innerHTML = `
+        <div class="saved-item-info">
+          <div class="saved-item-title">${escHtml(s.date)}</div>
+          <div class="saved-item-meta">${escHtml(clinics||'（医院名なし）')}　計${s.rows.length}行</div>
+        </div>
+        <div class="saved-actions">
+          <button class="btn btn-secondary btn-sm" onclick="loadSheet(${s.id})">読込</button>
+          <button class="btn btn-danger btn-sm"    onclick="deleteSheet(${s.id})">削除</button>
+        </div>`;
+      el.appendChild(div);
+    });
+  }
+
+  function loadSheet(id) {
+    const s = loadSaved().find(x => x.id === id);
+    if (!s) return;
+    clearAllRows(); setRows(s.rows);
+    window.scrollTo({top:0,behavior:'smooth'});
+    showToast('読み込みました','success');
+  }
+  function deleteSheet(id) {
+    if (!confirm('削除しますか？')) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(loadSaved().filter(x=>x.id!==id)));
+    renderSaved(); showToast('削除しました');
+  }
+  function clearAllRows() {
+    document.querySelectorAll('#orderBody tr input').forEach(inp => { inp.value=''; inp.classList.remove('invalid'); });
+  }
+  function clearSheet() {
+    if (!confirm('入力内容をすべてクリアしますか？')) return;
+    clearAllRows(); showToast('クリアしました');
+  }
+
+  // ── 画像出力
+  async function exportImage() {
+    const rows = getRows().filter(r => r.code||r.clinic||r.item||r.qty);
+    if (!rows.length) { showToast('データがありません','error'); return; }
+
+    const DPR=2, PAD=20, TITLE_H=48, HEAD_H=40, ROW_H=36, FOOT_H=20;
+
+    // 列定義（最小幅・ラベル・揃え）
+    const COLS = [
+      { label:'No.',     minW:36,  align:'center' },
+      { label:'顧客コード', minW:88,  align:'center' },
+      { label:'歯科医院名', minW:100, align:'left'   },
+      { label:'商品名',   minW:120, align:'left'   },
+      { label:'個数',     minW:50,  align:'center' },
+      { label:'備考',     minW:80,  align:'left'   },
+    ];
+
+    // ── 仮canvasでテキスト幅を計測して列幅を自動決定
+    const tmp = document.createElement('canvas').getContext('2d');
+    const fBold = (s) => `bold ${s}px 'Hiragino Sans',Meiryo,sans-serif`;
+    const fNorm = (s) => `${s}px 'Hiragino Sans',Meiryo,sans-serif`;
+
+    COLS.forEach((col, ci) => {
+      tmp.font = fBold(12);
+      let max = tmp.measureText(col.label).width;
+      rows.forEach((row, ri) => {
+        const val = String([ri+1, row.code, row.clinic, row.item, row.qty, row.note][ci] ?? '');
+        tmp.font = fNorm(13);
+        max = Math.max(max, tmp.measureText(val).width);
+      });
+      col.w = Math.max(col.minW, Math.ceil(max) + 24); // 左右12pxずつ余白
+    });
+
+    const TABLE_W = COLS.reduce((s,c) => s+c.w, 0);
+    const CANVAS_W = TABLE_W + PAD*2;
+    const CANVAS_H = TITLE_H + HEAD_H + rows.length*ROW_H + FOOT_H;
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = CANVAS_W * DPR;
+    canvas.height = CANVAS_H * DPR;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+
+    // 背景
+    ctx.fillStyle = '#f0f4fa';
+    ctx.fillRect(0,0,CANVAS_W,CANVAS_H);
+
+    // タイトルバー
+    ctx.fillStyle = '#1a56a0';
+    ctx.fillRect(0,0,CANVAS_W,TITLE_H);
+    ctx.fillStyle = '#fff';
+    ctx.font = fBold(18); ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.fillText('📋 注文書', PAD, TITLE_H/2);
+    const now = new Date();
+    ctx.font = fNorm(12); ctx.textAlign = 'right';
+    ctx.fillText(`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`, CANVAS_W-PAD, TITLE_H/2);
+
+    // ヘッダー行
+    const tableTop = TITLE_H;
+    ctx.fillStyle = '#1a56a0';
+    ctx.fillRect(PAD, tableTop, TABLE_W, HEAD_H);
+    let cx = PAD;
+    COLS.forEach((col, ci) => {
+      // 縦区切り線
+      if (ci > 0) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(cx,tableTop+6); ctx.lineTo(cx,tableTop+HEAD_H-6); ctx.stroke();
+      }
+      ctx.fillStyle = '#fff'; ctx.font = fBold(12); ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+      ctx.fillText(col.label, cx+col.w/2, tableTop+HEAD_H/2);
+      cx += col.w;
+    });
+
+    // データ行
+    rows.forEach((row, i) => {
+      const y = tableTop + HEAD_H + i*ROW_H;
+      const vals = [i+1, row.code, row.clinic, row.item, row.qty, row.note];
+      ctx.fillStyle = i%2===0 ? '#ffffff' : '#f0f5fc';
+      ctx.fillRect(PAD, y, TABLE_W, ROW_H);
+      // 下線
+      ctx.strokeStyle = '#d8e4f0'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PAD,y+ROW_H); ctx.lineTo(PAD+TABLE_W,y+ROW_H); ctx.stroke();
+      // 縦区切り線
+      let cx2 = PAD;
+      COLS.forEach((col, ci) => {
+        if (ci > 0) {
+          ctx.strokeStyle = '#e4eaf4'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(cx2,y+4); ctx.lineTo(cx2,y+ROW_H-4); ctx.stroke();
+        }
+        const val = String(vals[ci]??'');
+        ctx.fillStyle = ci===0 ? '#9ba8c0' : '#1a1a2e';
+        ctx.font = (ci===1 && val.length===5) ? fBold(13) : fNorm(13);
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = col.align==='center' ? 'center' : 'left';
+        const tx = col.align==='center' ? cx2+col.w/2 : cx2+10;
+        ctx.fillText(val, tx, y+ROW_H/2);
+        cx2 += col.w;
+      });
+    });
+
+    // 外枠
+    ctx.strokeStyle = '#b8c8e0'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(PAD, tableTop, TABLE_W, HEAD_H+rows.length*ROW_H);
+
+    // 画像生成 → 即保存 or 共有
+    const now2 = new Date();
+    const stamp = `${now2.getFullYear()}${String(now2.getMonth()+1).padStart(2,'0')}${String(now2.getDate()).padStart(2,'0')}`;
+    const filename = `注文書_${stamp}.png`;
+
+    canvas.toBlob(async blob => {
+      // スマホ：Web Share API → 共有メニューから保存・送信
+      if (navigator.canShare) {
+        const file = new File([blob], filename, { type:'image/png' });
+        if (navigator.canShare({ files:[file] })) {
+          try { await navigator.share({ files:[file], title:filename }); return; }
+          catch(e) { if (e.name==='AbortError') return; }
+        }
+      }
+      // PC：直接ダウンロード
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href=url; a.download=filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+      showToast(`${filename} を保存しました`,'success');
+    }, 'image/png');
+  }
+
+  // ── CSV出力
+  function exportCSV() {
+    const rows = getRows().filter(r => r.code||r.clinic||r.item||r.qty);
+    if (!rows.length) { showToast('エクスポートするデータがありません','error'); return; }
+    const headers = ['No.','顧客コード','歯科医院名','商品名','個数','備考'];
+    const csvRows = [headers, ...rows.map((r,i)=>[i+1,r.code,r.clinic,r.item,r.qty,r.note])];
+    const escape = v => '"'+String(v??'').replace(/"/g,'""')+'"';
+    const csvText = '﻿' + csvRows.map(r=>r.map(escape).join(',')).join('\r\n');
+    const now = new Date();
+    const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+    const filename = `注文書_${stamp}.csv`;
+    const blob = new Blob([csvText],{type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download=filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    showToast(`${filename} を保存しました`,'success');
+  }
+
+  function printSheet() { window.print(); }
+
+  function escHtml(str) {
+    return String(str??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  let toastTimer;
+  function showToast(msg,type='') {
+    const el=document.getElementById('toast');
+    el.textContent=msg; el.className='show'+(type?' '+type:'');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>{el.className='';},2600);
+  }
+
+  init();
+</script>
+</body>
+</html>
