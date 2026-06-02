@@ -66,6 +66,36 @@
     input.code-input { text-align:center; letter-spacing:.12em; font-weight:700; }
     input.qty-input  { text-align:center; }
 
+    /* カスタム予測変換ドロップダウン */
+    .ac-dropdown {
+      position: fixed;
+      background: #fff;
+      border: 1.5px solid var(--primary);
+      border-top: none;
+      border-radius: 0 0 9px 9px;
+      box-shadow: 0 8px 24px rgba(26,86,160,.18);
+      z-index: 9000;
+      max-height: 220px;
+      overflow-y: auto;
+      display: none;
+    }
+    .ac-item {
+      padding: 10px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      border-bottom: 1px solid #e8eef6;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ac-item:last-child { border-bottom: none; }
+    .ac-item:hover, .ac-item.selected {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
     /* Saved list */
     .saved-panel { margin-top:14px; background:var(--white); border-radius:var(--radius); box-shadow:0 2px 10px rgba(26,86,160,.08); overflow:hidden; }
     .saved-header { padding:11px 16px; background:var(--primary-light); font-size:12px; font-weight:700; color:var(--primary); letter-spacing:.06em; }
@@ -76,7 +106,6 @@
     .saved-item-meta  { font-size:11px; color:var(--muted); margin-top:2px; }
     .saved-actions { display:flex; gap:6px; }
     .empty-msg { padding:22px; text-align:center; color:var(--muted); font-size:13px; }
-
 
     /* Toast */
     #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(70px); background:#1a1a2e; color:#fff; padding:11px 24px; border-radius:28px; font-size:13px; font-weight:700; box-shadow:0 4px 20px rgba(0,0,0,.22); transition:transform .28s cubic-bezier(.22,1,.36,1),opacity .28s; opacity:0; z-index:9999; pointer-events:none; }
@@ -130,9 +159,6 @@
     </div>
   </div>
 
-  <!-- 予測変換用 datalist -->
-  <datalist id="productList"></datalist>
-
   <!-- Saved list -->
   <div class="saved-panel no-print">
     <div class="saved-header">📁 保存済み注文書</div>
@@ -146,11 +172,113 @@
   const PRODUCTS_KEY = 'dental_products';
   const DEFAULT_ROWS = 20;
 
+  // ── 全角→半角変換
+  const KANA_MAP = {
+    'ァ':'ｧ','ア':'ｱ','ィ':'ｨ','イ':'ｲ','ゥ':'ｩ','ウ':'ｳ','ェ':'ｪ','エ':'ｴ',
+    'ォ':'ｫ','オ':'ｵ','カ':'ｶ','ガ':'ｶﾞ','キ':'ｷ','ギ':'ｷﾞ','ク':'ｸ','グ':'ｸﾞ',
+    'ケ':'ｹ','ゲ':'ｹﾞ','コ':'ｺ','ゴ':'ｺﾞ','サ':'ｻ','ザ':'ｻﾞ','シ':'ｼ','ジ':'ｼﾞ',
+    'ス':'ｽ','ズ':'ｽﾞ','セ':'ｾ','ゼ':'ｾﾞ','ソ':'ｿ','ゾ':'ｿﾞ','タ':'ﾀ','ダ':'ﾀﾞ',
+    'チ':'ﾁ','ヂ':'ﾁﾞ','ッ':'ｯ','ツ':'ﾂ','ヅ':'ﾂﾞ','テ':'ﾃ','デ':'ﾃﾞ','ト':'ﾄ',
+    'ド':'ﾄﾞ','ナ':'ﾅ','ニ':'ﾆ','ヌ':'ﾇ','ネ':'ﾈ','ノ':'ﾉ','ハ':'ﾊ','バ':'ﾊﾞ',
+    'パ':'ﾊﾟ','ヒ':'ﾋ','ビ':'ﾋﾞ','ピ':'ﾋﾟ','フ':'ﾌ','ブ':'ﾌﾞ','プ':'ﾌﾟ','ヘ':'ﾍ',
+    'ベ':'ﾍﾞ','ペ':'ﾍﾟ','ホ':'ﾎ','ボ':'ﾎﾞ','ポ':'ﾎﾟ','マ':'ﾏ','ミ':'ﾐ','ム':'ﾑ',
+    'メ':'ﾒ','モ':'ﾓ','ャ':'ｬ','ヤ':'ﾔ','ュ':'ｭ','ユ':'ﾕ','ョ':'ｮ','ヨ':'ﾖ',
+    'ラ':'ﾗ','リ':'ﾘ','ル':'ﾙ','レ':'ﾚ','ロ':'ﾛ','ヮ':'ﾜ','ワ':'ﾜ','ヲ':'ｦ',
+    'ン':'ﾝ','ヴ':'ｳﾞ','ヵ':'ｶ','ヶ':'ｹ','ー':'ｰ'
+  };
+
+  function toHalfWidth(str) {
+    return str
+      .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+      .replace(/[ァ-ヶー]/g, s => KANA_MAP[s] || s);
+  }
+
+  // 半角変換ハンドラを付与（カタカナ・アルファベット）
+  function addHalfWidthHandlers(input) {
+    input.addEventListener('input', e => {
+      if (e.isComposing) return;   // IME変換中はスキップ
+      input.value = toHalfWidth(input.value);
+    });
+    input.addEventListener('compositionend', () => {
+      input.value = toHalfWidth(input.value);
+    });
+  }
+
+  // ── カスタム予測変換ドロップダウン
+  const acEl = document.createElement('div');
+  acEl.className = 'ac-dropdown';
+  document.body.appendChild(acEl);
+
+  let acInput = null;   // 現在フォーカス中の商品名input
+  let acItems = [];     // 表示中の候補リスト
+  let acIdx   = -1;     // キーボードで選択中のインデックス
+
+  function showAC(input) {
+    acInput = input;
+    const val = input.value.trim();
+    const products = getProducts();
+    acItems = (val ? products.filter(p => p.includes(val)) : products).slice(0, 20);
+
+    if (!acItems.length) { hideAC(); return; }
+
+    acEl.innerHTML = acItems.map((p, i) =>
+      `<div class="ac-item" data-i="${i}">${escHtml(p)}</div>`
+    ).join('');
+    acIdx = -1;
+
+    const rect = input.getBoundingClientRect();
+    acEl.style.left  = rect.left + 'px';
+    acEl.style.top   = (rect.bottom + 2) + 'px';
+    acEl.style.width = Math.max(rect.width, 180) + 'px';
+    acEl.style.display = 'block';
+  }
+
+  function hideAC() {
+    acEl.style.display = 'none';
+    acInput = null;
+    acItems = [];
+    acIdx   = -1;
+  }
+
+  function updateACHighlight() {
+    acEl.querySelectorAll('.ac-item').forEach((el, i) => {
+      el.classList.toggle('selected', i === acIdx);
+      if (i === acIdx) el.scrollIntoView({ block:'nearest' });
+    });
+  }
+
+  function selectAC(i) {
+    if (acInput && acItems[i] !== undefined) {
+      acInput.value = acItems[i];
+      saveProduct(acItems[i]);
+      hideAC();
+      acInput.focus();
+    }
+  }
+
+  // ドロップダウンのクリック／タッチ
+  acEl.addEventListener('mousedown', e => { e.preventDefault(); }); // blurを防ぐ
+  acEl.addEventListener('touchstart', e => { e.preventDefault(); }, { passive: false });
+  acEl.addEventListener('click', e => {
+    const item = e.target.closest('.ac-item');
+    if (item) selectAC(Number(item.dataset.i));
+  });
+
+  // スクロール・リサイズ時は閉じる
+  window.addEventListener('scroll', hideAC, { passive: true });
+  window.addEventListener('resize', hideAC, { passive: true });
+
+  // 外部クリックで閉じる
+  document.addEventListener('mousedown', e => {
+    if (acEl.style.display === 'block' && !acEl.contains(e.target) && e.target !== acInput) {
+      hideAC();
+    }
+  });
+
   // ── 初期化
   function init() {
     setHeaderDate();
     buildRows(DEFAULT_ROWS);
-    renderProductList();
     renderSaved();
   }
 
@@ -173,23 +301,66 @@
     tr.innerHTML = `
       <td class="td-no">${n}</td>
       <td><input type="text" class="code-input" placeholder="00000" maxlength="5" inputmode="numeric" autocomplete="off"></td>
-      <td><input type="text" placeholder="医院名" autocomplete="off"></td>
-      <td><input type="text" class="item-input" placeholder="商品名" list="productList" autocomplete="off"></td>
-      <td><input type="number" class="qty-input" placeholder="0" min="0" max="9999" inputmode="numeric"></td>
-      <td><input type="text" placeholder="備考" autocomplete="off"></td>
+      <td><input type="text" inputmode="text" placeholder="医院名" autocomplete="off"></td>
+      <td><input type="text" class="item-input" inputmode="text" placeholder="商品名" autocomplete="off"></td>
+      <td><input type="text" class="qty-input" placeholder="0" maxlength="4" inputmode="numeric" autocomplete="off"></td>
+      <td><input type="text" inputmode="text" placeholder="備考" autocomplete="off"></td>
     `;
+
+    const inputs = tr.querySelectorAll('input');
+    const [codeInput, nameInput, itemInput, qtyInput, noteInput] = inputs;
+
     // 顧客コード：数字のみ
-    const codeInput = tr.querySelector('.code-input');
     codeInput.addEventListener('input', () => {
       codeInput.value = codeInput.value.replace(/[^0-9]/g, '').slice(0, 5);
       validateCodeInput(codeInput);
     });
-    // 商品名：フォーカスを外れたとき候補に追加
-    const itemInput = tr.querySelector('.item-input');
+
+    // 歯科医院名・備考：カタカナ・アルファベットを自動半角化
+    addHalfWidthHandlers(nameInput);
+    addHalfWidthHandlers(noteInput);
+
+    // 個数：数字のみ（全角→半角変換）
+    qtyInput.addEventListener('input', () => {
+      qtyInput.value = qtyInput.value
+        .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+        .replace(/[^0-9]/g, '')
+        .slice(0, 4);
+    });
+
+    // 商品名：半角変換 ＋ カスタム予測変換
+    itemInput.addEventListener('input', e => {
+      if (!e.isComposing) itemInput.value = toHalfWidth(itemInput.value);
+      showAC(itemInput);
+    });
+    itemInput.addEventListener('compositionend', () => {
+      itemInput.value = toHalfWidth(itemInput.value);
+      showAC(itemInput);
+    });
+    itemInput.addEventListener('focus', () => showAC(itemInput));
     itemInput.addEventListener('blur', () => {
+      setTimeout(() => { if (acInput === itemInput) hideAC(); }, 160);
       const v = itemInput.value.trim();
       if (v) saveProduct(v);
     });
+    itemInput.addEventListener('keydown', e => {
+      if (acEl.style.display !== 'block') return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        acIdx = Math.min(acIdx + 1, acItems.length - 1);
+        updateACHighlight();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        acIdx = Math.max(acIdx - 1, -1);
+        updateACHighlight();
+      } else if (e.key === 'Enter' && acIdx >= 0) {
+        e.preventDefault();
+        selectAC(acIdx);
+      } else if (e.key === 'Escape') {
+        hideAC();
+      }
+    });
+
     return tr;
   }
 
@@ -200,22 +371,17 @@
 
   function addRows(n) { buildRows(n); showToast(`${n}行追加しました`); }
 
-  // ── 予測変換（商品名候補）
+  // ── 予測変換候補（localStorage）
   function getProducts() {
     try { return JSON.parse(localStorage.getItem(PRODUCTS_KEY)) || []; }
     catch { return []; }
   }
   function saveProduct(name) {
     let list = getProducts();
-    if (list.includes(name)) return;        // 重複しない
+    if (list.includes(name)) return;
     list.unshift(name);
-    list = list.slice(0, 200);              // 最大200件
+    list = list.slice(0, 200);
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(list));
-    renderProductList();
-  }
-  function renderProductList() {
-    const dl = document.getElementById('productList');
-    dl.innerHTML = getProducts().map(p => `<option value="${escHtml(p)}">`).join('');
   }
 
   // ── データ取得 / セット
@@ -254,7 +420,6 @@
     if (!validateAll()) return;
     const rows = getRows().filter(r => r.code||r.clinic||r.item||r.qty);
     if (!rows.length) { showToast('入力がありません','error'); return; }
-    // 商品名を候補に追加
     rows.forEach(r => { if (r.item) saveProduct(r.item); });
     const saved = loadSaved();
     const now = new Date();
@@ -315,7 +480,6 @@
 
     const DPR=2, PAD=20, TITLE_H=48, HEAD_H=40, ROW_H=36, FOOT_H=20;
 
-    // 列定義（最小幅・ラベル・揃え）
     const COLS = [
       { label:'No.',     minW:36,  align:'center' },
       { label:'顧客コード', minW:88,  align:'center' },
@@ -325,7 +489,6 @@
       { label:'備考',     minW:80,  align:'left'   },
     ];
 
-    // ── 仮canvasでテキスト幅を計測して列幅を自動決定
     const tmp = document.createElement('canvas').getContext('2d');
     const fBold = (s) => `bold ${s}px 'Hiragino Sans',Meiryo,sans-serif`;
     const fNorm = (s) => `${s}px 'Hiragino Sans',Meiryo,sans-serif`;
@@ -338,7 +501,7 @@
         tmp.font = fNorm(13);
         max = Math.max(max, tmp.measureText(val).width);
       });
-      col.w = Math.max(col.minW, Math.ceil(max) + 24); // 左右12pxずつ余白
+      col.w = Math.max(col.minW, Math.ceil(max) + 24);
     });
 
     const TABLE_W = COLS.reduce((s,c) => s+c.w, 0);
@@ -351,11 +514,9 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(DPR, DPR);
 
-    // 背景
     ctx.fillStyle = '#f0f4fa';
     ctx.fillRect(0,0,CANVAS_W,CANVAS_H);
 
-    // タイトルバー
     ctx.fillStyle = '#1a56a0';
     ctx.fillRect(0,0,CANVAS_W,TITLE_H);
     ctx.fillStyle = '#fff';
@@ -365,13 +526,11 @@
     ctx.font = fNorm(12); ctx.textAlign = 'right';
     ctx.fillText(`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`, CANVAS_W-PAD, TITLE_H/2);
 
-    // ヘッダー行
     const tableTop = TITLE_H;
     ctx.fillStyle = '#1a56a0';
     ctx.fillRect(PAD, tableTop, TABLE_W, HEAD_H);
     let cx = PAD;
     COLS.forEach((col, ci) => {
-      // 縦区切り線
       if (ci > 0) {
         ctx.strokeStyle = 'rgba(255,255,255,0.25)';
         ctx.lineWidth = 1;
@@ -382,16 +541,13 @@
       cx += col.w;
     });
 
-    // データ行
     rows.forEach((row, i) => {
       const y = tableTop + HEAD_H + i*ROW_H;
       const vals = [i+1, row.code, row.clinic, row.item, row.qty, row.note];
       ctx.fillStyle = i%2===0 ? '#ffffff' : '#f0f5fc';
       ctx.fillRect(PAD, y, TABLE_W, ROW_H);
-      // 下線
       ctx.strokeStyle = '#d8e4f0'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(PAD,y+ROW_H); ctx.lineTo(PAD+TABLE_W,y+ROW_H); ctx.stroke();
-      // 縦区切り線
       let cx2 = PAD;
       COLS.forEach((col, ci) => {
         if (ci > 0) {
@@ -409,17 +565,14 @@
       });
     });
 
-    // 外枠
     ctx.strokeStyle = '#b8c8e0'; ctx.lineWidth = 1.5;
     ctx.strokeRect(PAD, tableTop, TABLE_W, HEAD_H+rows.length*ROW_H);
 
-    // 画像生成 → 即保存 or 共有
     const now2 = new Date();
     const stamp = `${now2.getFullYear()}${String(now2.getMonth()+1).padStart(2,'0')}${String(now2.getDate()).padStart(2,'0')}`;
     const filename = `注文書_${stamp}.png`;
 
     canvas.toBlob(async blob => {
-      // スマホ：Web Share API → 共有メニューから保存・送信
       if (navigator.canShare) {
         const file = new File([blob], filename, { type:'image/png' });
         if (navigator.canShare({ files:[file] })) {
@@ -427,7 +580,6 @@
           catch(e) { if (e.name==='AbortError') return; }
         }
       }
-      // PC：直接ダウンロード
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href=url; a.download=filename;
