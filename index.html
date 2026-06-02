@@ -107,6 +107,35 @@
     .saved-actions { display:flex; gap:6px; }
     .empty-msg { padding:22px; text-align:center; color:var(--muted); font-size:13px; }
 
+    /* 画像プレビューモーダル */
+    .img-modal-backdrop {
+      position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:9500;
+      display:flex; align-items:center; justify-content:center; padding:16px;
+    }
+    .img-modal {
+      background:#fff; border-radius:16px; width:100%; max-width:520px;
+      max-height:92vh; display:flex; flex-direction:column; overflow:hidden;
+      box-shadow:0 8px 40px rgba(0,0,0,.28);
+    }
+    .img-modal-head {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 18px; border-bottom:1px solid #e4eaf4; flex-shrink:0;
+    }
+    .img-modal-title { font-weight:700; font-size:15px; color:var(--primary); }
+    .img-modal-close {
+      background:none; border:none; font-size:24px; cursor:pointer;
+      color:var(--muted); line-height:1; padding:2px 6px; border-radius:6px;
+    }
+    .img-modal-close:hover { background:#f0f4fa; }
+    .img-modal-body {
+      overflow:auto; flex:1; padding:14px; text-align:center; background:#f5f8fd;
+    }
+    .img-modal-body img { max-width:100%; border-radius:8px; box-shadow:0 2px 14px rgba(0,0,0,.14); }
+    .img-modal-foot {
+      display:flex; gap:10px; padding:14px 18px; border-top:1px solid #e4eaf4; flex-shrink:0;
+    }
+    .img-modal-foot .btn { flex:1; justify-content:center; padding:13px 10px; font-size:14px; }
+
     /* Toast */
     #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(70px); background:#1a1a2e; color:#fff; padding:11px 24px; border-radius:28px; font-size:13px; font-weight:700; box-shadow:0 4px 20px rgba(0,0,0,.22); transition:transform .28s cubic-bezier(.22,1,.36,1),opacity .28s; opacity:0; z-index:9999; pointer-events:none; }
     #toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
@@ -572,21 +601,63 @@
     const stamp = `${now2.getFullYear()}${String(now2.getMonth()+1).padStart(2,'0')}${String(now2.getDate()).padStart(2,'0')}`;
     const filename = `注文書_${stamp}.png`;
 
-    canvas.toBlob(async blob => {
+    canvas.toBlob(blob => showImageModal(blob, filename), 'image/png');
+  }
+
+  // ── 画像プレビューモーダル
+  function showImageModal(blob, filename) {
+    const url = URL.createObjectURL(blob);
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'img-modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="img-modal">
+        <div class="img-modal-head">
+          <span class="img-modal-title">📋 注文書画像</span>
+          <button class="img-modal-close" id="_imgClose">×</button>
+        </div>
+        <div class="img-modal-body">
+          <img src="${url}" alt="注文書">
+        </div>
+        <div class="img-modal-foot">
+          <button class="btn btn-export" id="_imgSave">💾 画像を保存</button>
+          <button class="btn btn-image"  id="_imgShare">📤 共有する</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+
+    function close() {
+      document.body.removeChild(backdrop);
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('_imgClose').addEventListener('click', close);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
+
+    // 保存ボタン：端末に直接ダウンロード
+    document.getElementById('_imgSave').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      showToast('画像を保存しました', 'success');
+    });
+
+    // 共有ボタン：Web Share API → LINEなどで送る
+    document.getElementById('_imgShare').addEventListener('click', async () => {
       if (navigator.canShare) {
-        const file = new File([blob], filename, { type:'image/png' });
-        if (navigator.canShare({ files:[file] })) {
-          try { await navigator.share({ files:[file], title:filename }); return; }
-          catch(e) { if (e.name==='AbortError') return; }
+        const file = new File([blob], filename, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          try { await navigator.share({ files: [file], title: filename }); return; }
+          catch(e) { if (e.name === 'AbortError') return; }
         }
       }
-      const url = URL.createObjectURL(blob);
+      // Web Share 非対応の場合はダウンロード
       const a = document.createElement('a');
-      a.href=url; a.download=filename;
+      a.href = url; a.download = filename;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(()=>URL.revokeObjectURL(url),1000);
-      showToast(`${filename} を保存しました`,'success');
-    }, 'image/png');
+      showToast('画像を保存しました', 'success');
+    });
   }
 
   // ── CSV出力
