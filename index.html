@@ -370,7 +370,6 @@
       itemInput.value = toHalfWidth(itemInput.value);
       showAC(itemInput);
     });
-    itemInput.addEventListener('focus', () => showAC(itemInput));
     itemInput.addEventListener('blur', () => {
       setTimeout(() => { if (acInput === itemInput) hideAC(); }, 160);
       const v = itemInput.value.trim();
