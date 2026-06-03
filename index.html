@@ -558,10 +558,12 @@
     const inputs = tr.querySelectorAll('input');
     const [codeInput, nameInput, itemInput, qtyInput, noteInput] = inputs;
 
-    // 顧客コード：数字のみ
+    // 顧客コード：数字のみ ＋ 5桁揃ったら医院名を自動入力
     codeInput.addEventListener('input', () => {
       codeInput.value = codeInput.value.replace(/[^0-9]/g, '').slice(0, 5);
       validateCodeInput(codeInput);
+      const name = lookupMasterByCode(codeInput.value);
+      if (name !== null) nameInput.value = name;
     });
 
     // 歯科医院名：マスタAC ＋ コード自動入力（医院名は変換しない）
@@ -678,6 +680,11 @@
     const norm = toHalfWidth(name);
     const entry = getMaster().find(m => toHalfWidth(m.name) === norm);
     return entry ? entry.code : null;
+  }
+  function lookupMasterByCode(code) {
+    if (!code || code.length !== 5) return null;
+    const entry = getMaster().find(m => m.code === code);
+    return entry ? entry.name : null;
   }
 
   // マスタパネル UI
