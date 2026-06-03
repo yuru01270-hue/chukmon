@@ -384,8 +384,9 @@
     acMode = 'clinic'; acCodeRef = codeInput;
     acInput = nameInput;
     const val = nameInput.value.trim();
+    const normVal = toHalfWidth(val);
     const master = getMaster();
-    const filtered = (val ? master.filter(m => m.name.includes(val)) : master).slice(0, 20);
+    const filtered = (val ? master.filter(m => toHalfWidth(m.name).includes(normVal)) : master).slice(0, 20);
     acItems = filtered.map(m => m.name);
     acItemsFull = filtered;
 
@@ -563,9 +564,8 @@
       validateCodeInput(codeInput);
     });
 
-    // 歯科医院名：半角変換 ＋ マスタAC ＋ コード自動入力
+    // 歯科医院名：マスタAC ＋ コード自動入力（医院名は変換しない）
     function applyClinicLogic() {
-      nameInput.value = toHalfWidth(nameInput.value);
       const code = lookupMaster(nameInput.value.trim());
       if (code !== null) { codeInput.value = code; validateCodeInput(codeInput); }
     }
@@ -674,7 +674,9 @@
   }
   function lookupMaster(name) {
     if (!name) return null;
-    const entry = getMaster().find(m => m.name === name);
+    // 全角・半角どちらで入力しても一致するよう両側を正規化して比較
+    const norm = toHalfWidth(name);
+    const entry = getMaster().find(m => toHalfWidth(m.name) === norm);
     return entry ? entry.code : null;
   }
 
