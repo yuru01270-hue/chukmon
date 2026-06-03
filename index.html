@@ -350,16 +350,18 @@
     renderSaved();
   }
 
-  // ナビバーのfocus/blurをtbody全体でまとめて監視
+  // ナビバーのfocus監視（focusin/focusoutはバブリングするので確実）
   function setupNavBar() {
     const tbody = document.getElementById('orderBody');
-    tbody.addEventListener('focus', e => {
+
+    tbody.addEventListener('focusin', e => {
       if (e.target.tagName === 'INPUT') {
         navFocused = e.target;
         navBar.classList.add('show');
+        positionNavBar();
       }
-    }, true);
-    tbody.addEventListener('blur', e => {
+    });
+    tbody.addEventListener('focusout', e => {
       if (e.target.tagName === 'INPUT') {
         setTimeout(() => {
           if (!tbody.querySelector('input:focus')) {
@@ -368,7 +370,19 @@
           }
         }, 120);
       }
-    }, true);
+    });
+
+    // Visual Viewport API：キーボードが出たときバーをキーボードの直上に配置
+    function positionNavBar() {
+      if (!window.visualViewport) return;
+      const vv = window.visualViewport;
+      const kbHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      navBar.style.bottom = kbHeight + 'px';
+    }
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', positionNavBar);
+      window.visualViewport.addEventListener('scroll', positionNavBar);
+    }
   }
 
   function setHeaderDate() {
