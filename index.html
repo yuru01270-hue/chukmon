@@ -241,10 +241,12 @@
 <div id="toast"></div>
 
 <script>
-  const STORAGE_KEY  = 'dental_orders_v2';
-  const PRODUCTS_KEY = 'dental_products';
-  const MASTER_KEY   = 'dental_master';
-  const DEFAULT_ROWS = 20;
+  const STORAGE_KEY   = 'dental_orders_v2';
+  const PRODUCTS_KEY  = 'dental_products';
+  const MASTER_KEY    = 'dental_master';
+  const MASTER_VER_KEY = 'dental_master_ver';
+  const MASTER_VERSION = 'v1';   // ← データを変えたらここを上げる（v2, v3…）
+  const DEFAULT_ROWS  = 20;
 
   // 初期顧客マスタデータ（localStorageが空のとき自動投入）
   const DEFAULT_MASTER = [
@@ -469,9 +471,14 @@
     buildRows(DEFAULT_ROWS);
     setupNavBar();
     renderSaved();
-    // マスタが未登録なら初期データを投入
-    if (!localStorage.getItem(MASTER_KEY)) {
-      localStorage.setItem(MASTER_KEY, JSON.stringify(DEFAULT_MASTER));
+    // マスタバージョンが古い（または未設定）なら初期データで上書きマージ
+    if (localStorage.getItem(MASTER_VER_KEY) !== MASTER_VERSION) {
+      const current = getMaster();
+      // DEFAULT_MASTER にない手動追加分だけ残してマージ
+      const defaultNames = new Set(DEFAULT_MASTER.map(m => m.name));
+      const userAdded = current.filter(m => !defaultNames.has(m.name));
+      localStorage.setItem(MASTER_KEY, JSON.stringify([...DEFAULT_MASTER, ...userAdded]));
+      localStorage.setItem(MASTER_VER_KEY, MASTER_VERSION);
     }
     renderMasterPanel();
     // マスタ登録フォームのコードinputは数字のみ
