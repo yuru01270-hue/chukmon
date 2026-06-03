@@ -246,6 +246,51 @@
   const MASTER_KEY   = 'dental_master';
   const DEFAULT_ROWS = 20;
 
+  // 初期顧客マスタデータ（localStorageが空のとき自動投入）
+  const DEFAULT_MASTER = [
+    {name:'石渡歯科',           code:'53007'},
+    {name:'岡山歯科',           code:'53031'},
+    {name:'ベル歯科',           code:'53023'},
+    {name:'桜井歯科',           code:'52028'},
+    {name:'DL斎藤',            code:'52054'},
+    {name:'大島歯科',           code:'53008'},
+    {name:'えがわ歯科',          code:'52006'},
+    {name:'アップル歯科',         code:'52001'},
+    {name:'小野歯科',           code:'52008'},
+    {name:'松本歯科',           code:'52078'},
+    {name:'れいこ歯科',          code:'52023'},
+    {name:'みなと歯科',          code:'53037'},
+    {name:'おざわ歯科',          code:'53010'},
+    {name:'ウエダ歯科',          code:'52004'},
+    {name:'FCラボ',            code:'53050'},
+    {name:'佐野歯科',           code:'52025'},
+    {name:'広瀬歯科',           code:'53057'},
+    {name:'伊藤歯科',           code:'53005'},
+    {name:'ごとう歯科',          code:'53015'},
+    {name:'ひろせ歯科',          code:'53022'},
+    {name:'町田歯科',           code:'53026'},
+    {name:'鈴原歯科',           code:'52014'},
+    {name:'片岡歯科',           code:'56025'},
+    {name:'秋元歯科',           code:'25002'},
+    {name:'秋庭歯科',           code:'56029'},
+    {name:'中の森歯科',          code:'52016'},
+    {name:'大川矯正',           code:'53036'},
+    {name:'デンタルファクトリー',     code:'53055'},
+    {name:'斎藤ラボ',           code:'53065'},
+    {name:'オーシャンD',         code:'52051'},
+    {name:'キムララボ',          code:'52052'},
+    {name:'冨樫歯科',           code:'25019'},
+    {name:'神谷歯科',           code:'25040'},
+    {name:'木村歯科',           code:'56028'},
+    {name:'富士根歯科',          code:'25025'},
+    {name:'秋庭矯正',           code:'25041'},
+    {name:'オオタラボ',          code:'53060'},
+    {name:'あしたか歯科',         code:'53044'},
+    {name:'はせがわ歯科',         code:'52048'},
+    {name:'せせらぎ歯科',         code:'57003'},
+    {name:'うめざわラボ',         code:'57051'},
+  ];
+
   // ── 全角→半角変換
   const KANA_MAP = {
     'ァ':'ｧ','ア':'ｱ','ィ':'ｨ','イ':'ｲ','ゥ':'ｩ','ウ':'ｳ','ェ':'ｪ','エ':'ｴ',
@@ -424,6 +469,10 @@
     buildRows(DEFAULT_ROWS);
     setupNavBar();
     renderSaved();
+    // マスタが未登録なら初期データを投入
+    if (!localStorage.getItem(MASTER_KEY)) {
+      localStorage.setItem(MASTER_KEY, JSON.stringify(DEFAULT_MASTER));
+    }
     renderMasterPanel();
     // マスタ登録フォームのコードinputは数字のみ
     document.getElementById('masterCodeInput').addEventListener('input', function() {
