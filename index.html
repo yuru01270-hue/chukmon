@@ -224,11 +224,13 @@
 
   // 半角変換ハンドラを付与（カタカナ・アルファベット）
   function addHalfWidthHandlers(input) {
+    // 直接入力（非IME）はリアルタイム変換
     input.addEventListener('input', e => {
-      if (e.isComposing) return;   // IME変換中はスキップ
+      if (e.isComposing) return;
       input.value = toHalfWidth(input.value);
     });
-    input.addEventListener('compositionend', () => {
+    // compositionendでvalue代入するとAndroidの「次へ」ナビが壊れるためblurで変換
+    input.addEventListener('blur', () => {
       input.value = toHalfWidth(input.value);
     });
   }
@@ -367,10 +369,10 @@
       showAC(itemInput);
     });
     itemInput.addEventListener('compositionend', () => {
-      itemInput.value = toHalfWidth(itemInput.value);
-      showAC(itemInput);
+      showAC(itemInput); // value変更はblurで行う（ここでvalue代入するとナビが壊れる）
     });
     itemInput.addEventListener('blur', () => {
+      itemInput.value = toHalfWidth(itemInput.value); // blur後に安全に変換
       setTimeout(() => { if (acInput === itemInput) hideAC(); }, 160);
       const v = itemInput.value.trim();
       if (v) saveProduct(v);
