@@ -240,11 +240,15 @@
   }
 
   // 半角変換ハンドラを付与（カタカナ・アルファベット）
-  // ※ blur/compositionend でのvalue代入はAndroidナビを壊すため inputのみで変換
   function addHalfWidthHandlers(input) {
+    // 非IME入力はリアルタイム変換
     input.addEventListener('input', e => {
       if (e.isComposing) return;
       input.value = toHalfWidth(input.value);
+    });
+    // IME確定後：setTimeout(0)で遅延→フォーカス移動が完了してから変換（ナビ干渉なし）
+    input.addEventListener('compositionend', () => {
+      setTimeout(() => { input.value = toHalfWidth(input.value); }, 0);
     });
   }
 
@@ -437,7 +441,10 @@
       showAC(itemInput);
     });
     itemInput.addEventListener('compositionend', () => {
-      showAC(itemInput); // value変更はblurで行う（ここでvalue代入するとナビが壊れる）
+      setTimeout(() => {
+        itemInput.value = toHalfWidth(itemInput.value);
+        if (document.activeElement === itemInput) showAC(itemInput);
+      }, 0);
     });
     itemInput.addEventListener('blur', () => {
       // value変更なし（blur中の代入はAndroidナビを壊す）
