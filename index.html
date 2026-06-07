@@ -1171,12 +1171,13 @@
   document.getElementById('searchModal').addEventListener('click', e => {
     if (e.target === document.getElementById('searchModal')) closeSearch();
   });
-  // Enterキーで検索実行
+  // Enterキーで検索実行 ＋ 商品名は自動半角変換
   ['searchCode','searchItem'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => {
       if (e.key === 'Enter') execSearch();
     });
   });
+  addHalfWidthHandlers(document.getElementById('searchItem'));
 
   function escHtml(str) {
     return String(str??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
