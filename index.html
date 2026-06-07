@@ -42,8 +42,21 @@
     .btn-export:hover  { background:#0a5e2d; }
     .btn-image   { background:#7c3aed; color:#fff; }
     .btn-image:hover   { background:#5b21b6; }
-    .btn-search  { background:#e67e22; color:#fff; }
-    .btn-search:hover  { background:#ca6f1e; }
+    .btn-search   { background:#e67e22; color:#fff; }
+    .btn-search:hover   { background:#ca6f1e; }
+    .btn-material { background:#16a085; color:#fff; }
+    .btn-material:hover { background:#117a65; }
+
+    /* 材料検索モーダル */
+    .material-quick { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+    .material-quick button { padding:6px 13px; border-radius:20px; border:1.5px solid var(--primary); background:#fff; color:var(--primary); font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .material-quick button:active { background:var(--primary-light); transform:scale(.96); }
+    .material-makers { padding:14px 18px; flex:1; overflow-y:auto; }
+    .material-makers-label { font-size:11px; color:var(--muted); font-weight:700; margin-bottom:10px; letter-spacing:.04em; }
+    .material-maker-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .material-maker-btns button { padding:14px 8px; border-radius:8px; border:none; background:var(--primary-light); color:var(--primary); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .material-maker-btns button:active { transform:scale(.96); }
+    .material-maker-btns .all-search { grid-column:1/-1; background:var(--primary); color:#fff; padding:14px; }
 
     /* 検索モーダル */
     .search-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9500; display:flex; align-items:center; justify-content:center; padding:16px; }
@@ -247,9 +260,10 @@
       <div class="toolbar-btns">
         <button class="btn btn-primary"   onclick="saveSheet()"><span class="btn-icon">💾</span>保存</button>
         <button class="btn btn-export"    onclick="exportCSV()"><span class="btn-icon">📤</span>CSV出力</button>
-        <button class="btn btn-image"   onclick="exportImage()"><span class="btn-icon">🖼</span>画像で送る</button>
-        <button class="btn btn-search"  onclick="openSearch()"><span class="btn-icon">🔍</span>検索</button>
-        <button class="btn btn-danger"  onclick="clearSheet()"><span class="btn-icon">🗑</span>クリア</button>
+        <button class="btn btn-image"    onclick="exportImage()"><span class="btn-icon">🖼</span>画像で送る</button>
+        <button class="btn btn-search"   onclick="openSearch()"><span class="btn-icon">🔍</span>検索</button>
+        <button class="btn btn-material" onclick="openMaterial()"><span class="btn-icon">🧪</span>材料</button>
+        <button class="btn btn-danger"   onclick="clearSheet()"><span class="btn-icon">🗑</span>クリア</button>
       </div>
     </div>
     <div class="table-wrapper">
@@ -288,6 +302,40 @@
   </div>
 </div>
 <div id="toast"></div>
+
+<!-- 材料検索モーダル -->
+<div id="materialModal" class="search-backdrop" style="display:none">
+  <div class="search-modal">
+    <div class="search-head">
+      <span class="search-head-title">🧪 材料検索</span>
+      <button class="search-close" id="materialClose">×</button>
+    </div>
+    <div class="search-form">
+      <input id="materialInput" type="text" placeholder="材料名を入力（例：印象材）" inputmode="text" autocomplete="off">
+      <div class="material-quick">
+        <button onclick="setMaterial('印象材')">印象材</button>
+        <button onclick="setMaterial('CR')">CR</button>
+        <button onclick="setMaterial('石膏')">石膏</button>
+        <button onclick="setMaterial('ボンディング')">ボンディング</button>
+        <button onclick="setMaterial('根管治療材')">根管治療材</button>
+        <button onclick="setMaterial('仮封材')">仮封材</button>
+        <button onclick="setMaterial('レジンセメント')">レジンセメント</button>
+        <button onclick="setMaterial('接着材')">接着材</button>
+      </div>
+    </div>
+    <div class="material-makers">
+      <div class="material-makers-label">メーカーを選んで検索（新しいタブで開きます）</div>
+      <div class="material-maker-btns">
+        <button onclick="searchMaker('GC')">🔍 GC</button>
+        <button onclick="searchMaker('松風')">🔍 松風</button>
+        <button onclick="searchMaker('クラレノリタケ')">🔍 クラレノリタケ</button>
+        <button onclick="searchMaker('デンツプライシロナ')">🔍 デンツプライシロナ</button>
+        <button onclick="searchMaker('マニー')">🔍 マニー</button>
+        <button class="all-search" onclick="searchAllMakers()">🔍 全メーカーまとめて検索</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- 検索モーダル -->
 <div id="searchModal" class="search-backdrop" style="display:none">
@@ -1192,6 +1240,38 @@
   }
 
   function printSheet() { window.print(); }
+
+  // ── 材料検索
+  function openMaterial() {
+    document.getElementById('materialModal').style.display = 'flex';
+    document.getElementById('materialInput').focus();
+  }
+  function closeMaterial() {
+    document.getElementById('materialModal').style.display = 'none';
+  }
+  function setMaterial(name) {
+    document.getElementById('materialInput').value = name;
+  }
+  function searchMaker(maker) {
+    const material = document.getElementById('materialInput').value.trim();
+    if (!material) { showToast('材料名を入力してください', 'error'); return; }
+    const q = encodeURIComponent(`歯科 ${maker} ${material} 製品 特徴`);
+    window.open(`https://www.google.com/search?q=${q}`, '_blank');
+  }
+  function searchAllMakers() {
+    const material = document.getElementById('materialInput').value.trim();
+    if (!material) { showToast('材料名を入力してください', 'error'); return; }
+    const q = encodeURIComponent(`歯科 ${material} GC OR 松風 OR クラレノリタケ OR デンツプライシロナ OR マニー 製品 特徴 価格`);
+    window.open(`https://www.google.com/search?q=${q}`, '_blank');
+  }
+  document.getElementById('materialClose').addEventListener('click', closeMaterial);
+  document.getElementById('materialModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('materialModal')) closeMaterial();
+  });
+  document.getElementById('materialInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') searchAllMakers();
+  });
+  addHalfWidthHandlers(document.getElementById('materialInput'));
 
   // ── 注文履歴検索
   function openSearch() {
