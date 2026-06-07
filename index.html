@@ -71,13 +71,13 @@
 
     /* Table */
     .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    table { width:100%; border-collapse:collapse; min-width:663px; table-layout:fixed; }
+    table { width:100%; border-collapse:collapse; min-width:648px; table-layout:fixed; }
     col.col-no   { width:36px; }
     col.col-code { width:88px; }
-    col.col-name { width:160px; }
+    col.col-name { width:110px; }
     col.col-item { width:240px; }
     col.col-qty  { width:64px; }
-    col.col-note { width:75px; }
+    col.col-note { width:110px; }
     thead th { background:var(--primary); color:#fff; font-size:12px; font-weight:700; padding:10px 8px; text-align:center; white-space:nowrap; position:sticky; top:0; z-index:2; }
     tbody tr { transition:background .1s; }
     tbody tr:nth-child(odd)  { background:#fff; }
@@ -310,7 +310,7 @@
   const PRODUCTS_KEY  = 'dental_products';
   const MASTER_KEY    = 'dental_master';
   const MASTER_VER_KEY = 'dental_master_ver';
-  const MASTER_VERSION = 'v4';   // ← データを変えたらここを上げる（v2, v3…）
+  const MASTER_VERSION = 'v5';   // ← データを変えたらここを上げる（v2, v3…）
   const DEFAULT_ROWS  = 20;
 
   // 初期顧客マスタデータ（localStorageが空のとき自動投入）
@@ -400,7 +400,7 @@
     {name:'八田デンタル',           code:'54056'},
     {name:'風間技工所',             code:'54059'},
     {name:'裾野歯研',               code:'54060'},
-    {name:'豊山デンタルラボラトリー', code:'54062'},
+    {name:'豊山デンタルラボ',       code:'54062'},
     {name:'技工室　山本',           code:'54064'},
     {name:'米山デンタルラボラトリー', code:'54065'},
     {name:'しぶや歯科クリニック',   code:'55022'},
