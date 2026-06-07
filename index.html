@@ -51,18 +51,19 @@
     .mat-cats { display:flex; flex-wrap:wrap; gap:6px; padding:12px 16px; border-bottom:1px solid #e4eaf4; background:#f5f8fd; flex-shrink:0; }
     .mat-cat-btn { padding:6px 13px; border-radius:20px; border:1.5px solid var(--border); background:#fff; color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; transition:background .12s,color .12s; }
     .mat-cat-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
-    .mat-results { flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
-    .mat-card { background:#fff; border:1px solid #e4eaf4; border-radius:10px; padding:12px 14px; box-shadow:0 1px 4px rgba(26,86,160,.06); }
-    .mat-card-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
-    .mat-maker { font-size:11px; font-weight:700; background:var(--primary-light); color:var(--primary); padding:2px 8px; border-radius:10px; white-space:nowrap; }
-    .mat-name { font-size:14px; font-weight:700; flex:1; }
-    .mat-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:8px; white-space:nowrap; }
+    /* 材料カタロググリッド */
+    .mat-results { flex:1; overflow-y:auto; padding:10px; display:grid; grid-template-columns:1fr 1fr; gap:8px; align-content:start; }
+    .mat-card { border:1.5px solid #a8c8a8; border-radius:4px; overflow:hidden; background:#fff; }
+    .mat-row { display:flex; border-bottom:1px solid #c0d8c0; min-height:24px; }
+    .mat-row:last-child { border-bottom:none; }
+    .mat-lbl { background:#2d6e2d; color:#fff; font-size:9px; font-weight:700; padding:4px 3px; width:34px; min-width:34px; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.3; border-right:1px solid #a8c8a8; flex-shrink:0; }
+    .mat-val { padding:4px 6px; flex:1; display:flex; align-items:center; flex-wrap:wrap; gap:3px; font-size:11px; color:#222; }
+    .mat-val.name-v { font-size:12px; font-weight:700; }
+    .mat-val.desc-v { align-items:flex-start; line-height:1.5; color:#444; padding:5px 6px; display:block; font-size:10px; }
+    .mat-val.price-v { font-weight:700; color:#c0392b; font-size:11px; }
+    .mat-badge { font-size:9px; font-weight:700; padding:1px 5px; border-radius:5px; white-space:nowrap; }
     .mat-badge.hoken { background:#d4edda; color:#1e7e34; }
     .mat-badge.jihi  { background:#fff3cd; color:#856404; }
-    .mat-info { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:6px; font-size:12px; }
-    .mat-info-item { color:var(--muted); }
-    .mat-info-item span { color:var(--text); font-weight:700; }
-    .mat-features { font-size:12px; color:#4a5568; line-height:1.6; }
     .mat-note { padding:8px 16px; font-size:10px; color:var(--muted); border-top:1px solid #e4eaf4; flex-shrink:0; text-align:center; }
 
     /* 検索モーダル */
@@ -362,56 +363,56 @@
   // ── 材料データベース
   const MATERIAL_DB = {
     '印象材': [
-      { maker:'GC',              name:'フジアルジネートIV',                   insurance:true,  points:'14点/回',          price:'約¥3,500/箱',           features:'操作性良好。適度な硬さで撤去しやすい。保険アルジネート印象材の定番。' },
-      { maker:'GC',              name:'プリンプレス',                          insurance:false, points:'—',               price:'約¥12,000/カートリッジ', features:'VPS（シリコーン）系。高精度・低変形率。補綴物製作用。' },
-      { maker:'松風',            name:'ハイアルジンスーパー',                  insurance:true,  points:'14点/回',          price:'約¥3,200/箱',           features:'操作時間の調整が可能。寸法安定性に優れたアルジネート。' },
-      { maker:'デンツプライシロナ', name:'エクスプレス2ウルトラライトボディ', insurance:false, points:'—',               price:'約¥15,000/カートリッジ', features:'VPS系。流動性が高くシャープな印象。高精度補綴に対応。' },
-      { maker:'クラレノリタケ',  name:'アクアシルソフト',                      insurance:false, points:'—',               price:'約¥14,000/カートリッジ', features:'親水性VPS。湿潤面でも高精度。ロングワーキングタイム。' },
+      { maker:'GC',              name:'フジアルジネートIV',                   insurance:true,  points:'14点/回',          price:'約¥3,500/箱',           spec:'粉末500g×10袋',                features:'操作性良好。適度な硬さで撤去しやすい。保険アルジネート印象材の定番。' },
+      { maker:'GC',              name:'プリンプレス',                          insurance:false, points:'—',               price:'約¥12,000/カートリッジ', spec:'カートリッジ×5本',              features:'VPS（シリコーン）系。高精度・低変形率。補綴物製作用。' },
+      { maker:'松風',            name:'ハイアルジンスーパー',                  insurance:true,  points:'14点/回',          price:'約¥3,200/箱',           spec:'粉末500g×10袋',                features:'操作時間の調整が可能。寸法安定性に優れたアルジネート。' },
+      { maker:'デンツプライシロナ', name:'エクスプレス2ウルトラライトボディ', insurance:false, points:'—',               price:'約¥15,000/カートリッジ', spec:'50mL×2本',                     features:'VPS系。流動性が高くシャープな印象。高精度補綴に対応。' },
+      { maker:'クラレノリタケ',  name:'アクアシルソフト',                      insurance:false, points:'—',               price:'約¥14,000/カートリッジ', spec:'50mL×2本',                     features:'親水性VPS。湿潤面でも高精度。ロングワーキングタイム。' },
     ],
     'CR': [
-      { maker:'GC',              name:'ガエノマーIIプラス',                    insurance:true,  points:'CR充填 117〜点',   price:'約¥6,000/シリンジ',     features:'フロアブルCR。流動性高く複雑な窩洞に対応。前歯・小臼歯保険適用。' },
-      { maker:'GC',              name:'ガエノバーサティル',                    insurance:true,  points:'CR充填 117〜点',   price:'約¥8,000/シリンジ',     features:'ペースト型。マルチシェード対応。臼歯部自費症例にも使用可。' },
-      { maker:'松風',            name:'エステライトΣクイック',                 insurance:true,  points:'CR充填 117〜点',   price:'約¥7,500/シリンジ',     features:'審美性と操作性を両立。光沢保持性が高く前歯審美に適する。' },
-      { maker:'松風',            name:'エステライトアストリア',                insurance:false, points:'—',               price:'約¥9,000/シリンジ',     features:'ナノフィラー系。高光沢・高審美。自費審美修復に最適。' },
-      { maker:'クラレノリタケ',  name:'クリアフィルマジェスティーES-2',        insurance:true,  points:'CR充填 117〜点',   price:'約¥9,500/シリンジ',     features:'高強度・高審美。ナノフィラーでポリッシュ性良好。' },
-      { maker:'デンツプライシロナ', name:'クラム',                            insurance:true,  points:'CR充填 117〜点',   price:'約¥7,000/シリンジ',     features:'光重合CR。優れた操作性。カラーシェードが豊富。' },
+      { maker:'GC',              name:'ガエノマーIIプラス',                    insurance:true,  points:'CR充填 117〜点',   price:'約¥6,000/シリンジ',     spec:'1.8mLシリンジ×5本',           features:'フロアブルCR。流動性高く複雑な窩洞に対応。前歯・小臼歯保険適用。' },
+      { maker:'GC',              name:'ガエノバーサティル',                    insurance:true,  points:'CR充填 117〜点',   price:'約¥8,000/シリンジ',     spec:'3.0mLシリンジ×5本',           features:'ペースト型。マルチシェード対応。臼歯部自費症例にも使用可。' },
+      { maker:'松風',            name:'エステライトΣクイック',                 insurance:true,  points:'CR充填 117〜点',   price:'約¥7,500/シリンジ',     spec:'3mLシリンジ×5本',             features:'審美性と操作性を両立。光沢保持性が高く前歯審美に適する。' },
+      { maker:'松風',            name:'エステライトアストリア',                insurance:false, points:'—',               price:'約¥9,000/シリンジ',     spec:'3mLシリンジ×5本',             features:'ナノフィラー系。高光沢・高審美。自費審美修復に最適。' },
+      { maker:'クラレノリタケ',  name:'クリアフィルマジェスティーES-2',        insurance:true,  points:'CR充填 117〜点',   price:'約¥9,500/シリンジ',     spec:'3.5mLシリンジ×5本',           features:'高強度・高審美。ナノフィラーでポリッシュ性良好。' },
+      { maker:'デンツプライシロナ', name:'クラム',                            insurance:true,  points:'CR充填 117〜点',   price:'約¥7,000/シリンジ',     spec:'3mLシリンジ×5本',             features:'光重合CR。優れた操作性。カラーシェードが豊富。' },
     ],
     '石膏': [
-      { maker:'GC',              name:'フジロック',                            insurance:false, points:'技工材料込み',     price:'約¥3,500/5kg',          features:'超硬石膏。圧縮強度高く作業模型に最適。膨張率が安定。' },
-      { maker:'松風',            name:'ニュープラスロック',                    insurance:false, points:'技工材料込み',     price:'約¥3,200/5kg',          features:'タイプIV超硬石膏。精密な作業模型用。適度な流動性。' },
-      { maker:'デンツプライシロナ', name:'エクストラハードダイ',               insurance:false, points:'技工材料込み',     price:'約¥4,200/5kg',          features:'ダイ用超硬石膏。表面硬度が極めて高い。' },
+      { maker:'GC',              name:'フジロック',                            insurance:false, points:'技工材料込み',     price:'約¥3,500/5kg',          spec:'5kg缶',                        features:'超硬石膏。圧縮強度高く作業模型に最適。膨張率が安定。' },
+      { maker:'松風',            name:'ニュープラスロック',                    insurance:false, points:'技工材料込み',     price:'約¥3,200/5kg',          spec:'5kg袋',                        features:'タイプIV超硬石膏。精密な作業模型用。適度な流動性。' },
+      { maker:'デンツプライシロナ', name:'エクストラハードダイ',               insurance:false, points:'技工材料込み',     price:'約¥4,200/5kg',          spec:'5kg袋',                        features:'ダイ用超硬石膏。表面硬度が極めて高い。' },
     ],
     'ボンディング': [
-      { maker:'GC',              name:'G-ボンドプラス',                        insurance:true,  points:'接着処理 25点',    price:'約¥6,500/ボトル',       features:'2ステップセルフエッチング。CR・グラスアイオノマー両対応。' },
-      { maker:'松風',            name:'ビューティーボンドマルチ',              insurance:true,  points:'接着処理 25点',    price:'約¥7,000/ボトル',       features:'ユニバーサルアドヒーシブ。全酸処理・SEどちらにも対応。' },
-      { maker:'クラレノリタケ',  name:'クリアフィルSEボンドII',                insurance:true,  points:'接着処理 25点',    price:'約¥8,000/ボトル',       features:'2ステップSEボンド。長期間の接着耐久性に定評。' },
-      { maker:'クラレノリタケ',  name:'クリアフィルメガボンド2',               insurance:true,  points:'接着処理 25点',    price:'約¥7,500/ボトル',       features:'全酸処理型。エナメル質・象牙質に高接着強度。' },
-      { maker:'デンツプライシロナ', name:'プライムアンドボンドアクティブ',    insurance:true,  points:'接着処理 25点',    price:'約¥8,500/ボトル',       features:'ユニバーサルアドヒーシブ。高い湿潤耐性を持つ。' },
+      { maker:'GC',              name:'G-ボンドプラス',                        insurance:true,  points:'接着処理 25点',    price:'約¥6,500/ボトル',       spec:'5mLボトル',                    features:'2ステップセルフエッチング。CR・グラスアイオノマー両対応。' },
+      { maker:'松風',            name:'ビューティーボンドマルチ',              insurance:true,  points:'接着処理 25点',    price:'約¥7,000/ボトル',       spec:'5mLボトル',                    features:'ユニバーサルアドヒーシブ。全酸処理・SEどちらにも対応。' },
+      { maker:'クラレノリタケ',  name:'クリアフィルSEボンドII',                insurance:true,  points:'接着処理 25点',    price:'約¥8,000/ボトル',       spec:'6mLボトル×2本セット',          features:'2ステップSEボンド。長期間の接着耐久性に定評。' },
+      { maker:'クラレノリタケ',  name:'クリアフィルメガボンド2',               insurance:true,  points:'接着処理 25点',    price:'約¥7,500/ボトル',       spec:'6mLボトル×2本セット',          features:'全酸処理型。エナメル質・象牙質に高接着強度。' },
+      { maker:'デンツプライシロナ', name:'プライムアンドボンドアクティブ',    insurance:true,  points:'接着処理 25点',    price:'約¥8,500/ボトル',       spec:'4.5mLボトル',                  features:'ユニバーサルアドヒーシブ。高い湿潤耐性を持つ。' },
     ],
     '根管治療材': [
-      { maker:'GC',              name:'シーラペックス',                        insurance:true,  points:'根管充填 580点〜', price:'約¥4,500/シリンジ',     features:'水酸化カルシウム系シーラー。生体親和性が高い。硬化後も柔軟性あり。' },
-      { maker:'マニー',          name:'R-フェイズファイル',                    insurance:true,  points:'根管形成に含む',   price:'約¥3,500/6本入り',      features:'NiTiロータリーファイル。優れた柔軟性で弯曲根管に対応。' },
-      { maker:'マニー',          name:'マニーステンレスKファイル',             insurance:true,  points:'根管形成に含む',   price:'約¥600/6本入り',        features:'ISO規格ステンレスファイル。高い耐久性とコストパフォーマンス。' },
-      { maker:'デンツプライシロナ', name:'プロテーパーゴールド',              insurance:true,  points:'根管形成に含む',   price:'約¥5,500/6本入り',      features:'NiTiロータリー。ゴールドワイヤーで柔軟性・破折抵抗性向上。' },
+      { maker:'GC',              name:'シーラペックス',                        insurance:true,  points:'根管充填 580点〜', price:'約¥4,500/シリンジ',     spec:'12mLシリンジ',                 features:'水酸化カルシウム系シーラー。生体親和性が高い。硬化後も柔軟性あり。' },
+      { maker:'マニー',          name:'R-フェイズファイル',                    insurance:true,  points:'根管形成に含む',   price:'約¥3,500/6本入り',      spec:'6本入（各サイズ）',             features:'NiTiロータリーファイル。優れた柔軟性で弯曲根管に対応。' },
+      { maker:'マニー',          name:'マニーステンレスKファイル',             insurance:true,  points:'根管形成に含む',   price:'約¥600/6本入り',        spec:'6本入（25mm/21mmほか）',       features:'ISO規格ステンレスファイル。高い耐久性とコストパフォーマンス。' },
+      { maker:'デンツプライシロナ', name:'プロテーパーゴールド',              insurance:true,  points:'根管形成に含む',   price:'約¥5,500/6本入り',      spec:'6本入（各サイズ）',             features:'NiTiロータリー。ゴールドワイヤーで柔軟性・破折抵抗性向上。' },
     ],
     '仮封材': [
-      { maker:'GC',              name:'キャビトン',                            insurance:true,  points:'仮封 20点',        price:'約¥2,500/チューブ',     features:'酸化亜鉛系仮封材。操作性抜群。撤去容易で保険定番。' },
-      { maker:'松風',            name:'ルーサロイドF',                         insurance:true,  points:'仮封 20点',        price:'約¥2,800/チューブ',     features:'フッ素放出型仮封材。2次齲蝕予防効果あり。' },
-      { maker:'デンツプライシロナ', name:'テンパリットブルー',                insurance:true,  points:'仮封 20点',        price:'約¥3,200/チューブ',     features:'硫酸カルシウム系。辺縁封鎖性が高く長期仮封に適する。' },
-      { maker:'GC',              name:'プロビゾーリー',                        insurance:true,  points:'仮封 20点',        price:'約¥4,000/カートリッジ', features:'レジン系暫間修復材。強度があり長期間の仮封に対応。' },
+      { maker:'GC',              name:'キャビトン',                            insurance:true,  points:'仮封 20点',        price:'約¥2,500/チューブ',     spec:'140gチューブ',                 features:'酸化亜鉛系仮封材。操作性抜群。撤去容易で保険定番。' },
+      { maker:'松風',            name:'ルーサロイドF',                         insurance:true,  points:'仮封 20点',        price:'約¥2,800/チューブ',     spec:'100gチューブ',                 features:'フッ素放出型仮封材。2次齲蝕予防効果あり。' },
+      { maker:'デンツプライシロナ', name:'テンパリットブルー',                insurance:true,  points:'仮封 20点',        price:'約¥3,200/チューブ',     spec:'80gチューブ',                  features:'硫酸カルシウム系。辺縁封鎖性が高く長期仮封に適する。' },
+      { maker:'GC',              name:'プロビゾーリー',                        insurance:true,  points:'仮封 20点',        price:'約¥4,000/カートリッジ', spec:'カートリッジ×2本',             features:'レジン系暫間修復材。強度があり長期間の仮封に対応。' },
     ],
     'レジンセメント': [
-      { maker:'クラレノリタケ',  name:'パナビアV5',                            insurance:true,  points:'合着 100点〜',     price:'約¥16,000/ペースト',    features:'光重合型レジンセメント。オールセラミック・ジルコニアに高接着。' },
-      { maker:'クラレノリタケ',  name:'パナビアF 2.0',                         insurance:true,  points:'合着 100点〜',     price:'約¥14,000/ペースト',    features:'化学重合型。メタルクラウン・ブリッジの保険合着に対応。' },
-      { maker:'GC',              name:'G-セムワン',                            insurance:true,  points:'合着 100点〜',     price:'約¥10,000/ペースト',    features:'ユニバーサルレジンセメント。操作時間が長く余剰セメント除去が容易。' },
-      { maker:'松風',            name:'エステムセメントネクスト',              insurance:false, points:'—',               price:'約¥15,000/ペースト',    features:'審美補綴用高透明レジンセメント。セラミック系に最適。' },
-      { maker:'デンツプライシロナ', name:'スマートセム2',                     insurance:true,  points:'合着 100点〜',     price:'約¥11,000/ペースト',    features:'自己接着型レジンセメント。プライマー不要で操作性に優れる。' },
+      { maker:'クラレノリタケ',  name:'パナビアV5',                            insurance:true,  points:'合着 100点〜',     price:'約¥16,000/ペースト',    spec:'5mL×2本セット',               features:'光重合型レジンセメント。オールセラミック・ジルコニアに高接着。' },
+      { maker:'クラレノリタケ',  name:'パナビアF 2.0',                         insurance:true,  points:'合着 100点〜',     price:'約¥14,000/ペースト',    spec:'6mL×2本セット',               features:'化学重合型。メタルクラウン・ブリッジの保険合着に対応。' },
+      { maker:'GC',              name:'G-セムワン',                            insurance:true,  points:'合着 100点〜',     price:'約¥10,000/ペースト',    spec:'ペースト2本セット',             features:'ユニバーサルレジンセメント。操作時間が長く余剰セメント除去が容易。' },
+      { maker:'松風',            name:'エステムセメントネクスト',              insurance:false, points:'—',               price:'約¥15,000/ペースト',    spec:'ペースト2本セット',             features:'審美補綴用高透明レジンセメント。セラミック系に最適。' },
+      { maker:'デンツプライシロナ', name:'スマートセム2',                     insurance:true,  points:'合着 100点〜',     price:'約¥11,000/ペースト',    spec:'8.7gシリンジ×2本',            features:'自己接着型レジンセメント。プライマー不要で操作性に優れる。' },
     ],
     '接着材': [
-      { maker:'GC',              name:'G-セムプラス',                          insurance:true,  points:'接着処理 25点',    price:'約¥7,500/ボトル',       features:'グラスアイオノマー系セメント。フッ素放出。歯質への高い親和性。' },
-      { maker:'松風',            name:'スーパーボンドC&B',                     insurance:true,  points:'合着 100点〜',     price:'約¥22,000/セット',      features:'4-META/MMA-TBBレジン系。金属・セラミックへの高接着。長期臨床実績。' },
-      { maker:'クラレノリタケ',  name:'オールボンドユニバーサル',              insurance:true,  points:'接着処理 25点',    price:'約¥8,000/ボトル',       features:'ユニバーサルアドヒーシブ。全基質（金属・セラミック・歯質）に対応。' },
-      { maker:'マニー',          name:'ライトボンドII',                        insurance:true,  points:'接着処理 25点',    price:'約¥5,000/ボトル',       features:'光重合型接着材。操作性に優れ、小児歯科にも使用しやすい。' },
+      { maker:'GC',              name:'G-セムプラス',                          insurance:true,  points:'接着処理 25点',    price:'約¥7,500/ボトル',       spec:'5mLボトル',                    features:'グラスアイオノマー系セメント。フッ素放出。歯質への高い親和性。' },
+      { maker:'松風',            name:'スーパーボンドC&B',                     insurance:true,  points:'合着 100点〜',     price:'約¥22,000/セット',      spec:'4本組セット',                  features:'4-META/MMA-TBBレジン系。金属・セラミックへの高接着。長期臨床実績。' },
+      { maker:'クラレノリタケ',  name:'オールボンドユニバーサル',              insurance:true,  points:'接着処理 25点',    price:'約¥8,000/ボトル',       spec:'6mLボトル',                    features:'ユニバーサルアドヒーシブ。全基質（金属・セラミック・歯質）に対応。' },
+      { maker:'マニー',          name:'ライトボンドII',                        insurance:true,  points:'接着処理 25点',    price:'約¥5,000/ボトル',       spec:'5mLボトル',                    features:'光重合型接着材。操作性に優れ、小児歯科にも使用しやすい。' },
     ],
   };
 
@@ -1313,16 +1314,30 @@
     const el = document.getElementById('matResults');
     el.innerHTML = items.map(p => `
       <div class="mat-card">
-        <div class="mat-card-head">
-          <span class="mat-maker">${escHtml(p.maker)}</span>
-          <span class="mat-name">${escHtml(p.name)}</span>
-          <span class="mat-badge ${p.insurance ? 'hoken' : 'jihi'}">${p.insurance ? '保険' : '自費'}</span>
+        <div class="mat-row">
+          <div class="mat-lbl">メーカー</div>
+          <div class="mat-val">${escHtml(p.maker)}</div>
         </div>
-        <div class="mat-info">
-          <div class="mat-info-item">💴 <span>${escHtml(p.price)}</span></div>
-          <div class="mat-info-item">🏥 <span>${escHtml(p.points)}</span></div>
+        <div class="mat-row">
+          <div class="mat-lbl">商品名</div>
+          <div class="mat-val name-v">${escHtml(p.name)}<span class="mat-badge ${p.insurance?'hoken':'jihi'}">${p.insurance?'保険':'自費'}</span></div>
         </div>
-        <div class="mat-features">${escHtml(p.features)}</div>
+        <div class="mat-row">
+          <div class="mat-lbl">説明</div>
+          <div class="mat-val desc-v">${escHtml(p.features)}</div>
+        </div>
+        <div class="mat-row">
+          <div class="mat-lbl">規格</div>
+          <div class="mat-val">${escHtml(p.spec||'—')}</div>
+        </div>
+        <div class="mat-row">
+          <div class="mat-lbl">定価</div>
+          <div class="mat-val price-v">${escHtml(p.price)}</div>
+        </div>
+        <div class="mat-row">
+          <div class="mat-lbl">点数</div>
+          <div class="mat-val">${escHtml(p.points)}</div>
+        </div>
       </div>
     `).join('');
   }
