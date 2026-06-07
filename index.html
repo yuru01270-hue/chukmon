@@ -886,6 +886,9 @@
     return true;
   }
 
+  // 現在読み込み中の保存IDを記憶（nullなら新規）
+  let currentSheetId = null;
+
   // ── 保存
   function saveSheet() {
     if (!validateAll()) return;
@@ -894,8 +897,23 @@
     rows.forEach(r => { if (r.item) saveProduct(r.item); });
     const saved = loadSaved();
     const now = new Date();
-    saved.unshift({ id:Date.now(), date:`${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日`, rows });
+    const dateStr = `${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日`;
+    if (currentSheetId !== null) {
+      // 読み込んだ既存エントリを上書き
+      const idx = saved.findIndex(x => x.id === currentSheetId);
+      if (idx >= 0) {
+        saved[idx].rows = rows;
+        saved[idx].date = dateStr;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+        renderSaved();
+        showToast('上書き保存しました', 'success');
+        return;
+      }
+    }
+    // 新規保存
+    saved.unshift({ id:Date.now(), date:dateStr, rows });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    currentSheetId = saved[0].id;
     renderSaved();
     showToast('保存しました','success');
   }
@@ -928,6 +946,7 @@
     const s = loadSaved().find(x => x.id === id);
     if (!s) return;
     clearAllRows(); setRows(s.rows);
+    currentSheetId = id;   // 読み込んだIDを記憶→次の保存で上書き
     window.scrollTo({top:0,behavior:'smooth'});
     showToast('読み込みました','success');
   }
@@ -941,7 +960,9 @@
   }
   function clearSheet() {
     if (!confirm('入力内容をすべてクリアしますか？')) return;
-    clearAllRows(); showToast('クリアしました');
+    clearAllRows();
+    currentSheetId = null;  // クリア後は新規扱い
+    showToast('クリアしました');
   }
 
   // ── 画像出力
