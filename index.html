@@ -42,6 +42,31 @@
     .btn-export:hover  { background:#0a5e2d; }
     .btn-image   { background:#7c3aed; color:#fff; }
     .btn-image:hover   { background:#5b21b6; }
+    .btn-search  { background:#e67e22; color:#fff; }
+    .btn-search:hover  { background:#ca6f1e; }
+
+    /* 検索モーダル */
+    .search-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9500; display:flex; align-items:center; justify-content:center; padding:16px; }
+    .search-modal { background:#fff; border-radius:16px; width:100%; max-width:480px; max-height:88vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 40px rgba(0,0,0,.28); }
+    .search-head { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid #e4eaf4; flex-shrink:0; }
+    .search-head-title { font-weight:700; font-size:15px; color:var(--primary); }
+    .search-close { background:none; border:none; font-size:24px; cursor:pointer; color:var(--muted); line-height:1; padding:2px 6px; border-radius:6px; }
+    .search-close:hover { background:#f0f4fa; }
+    .search-form { display:flex; flex-direction:column; gap:8px; padding:14px 18px; border-bottom:1px solid #e4eaf4; background:#f5f8fd; flex-shrink:0; }
+    .search-form input { border:1.5px solid #d0daea; border-radius:6px; padding:10px 12px; font-size:14px; font-family:inherit; width:100%; -webkit-appearance:none; }
+    .search-form input:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 2.5px rgba(26,86,160,.13); }
+    .search-btn { display:flex; align-items:center; justify-content:center; gap:6px; padding:11px; font-size:14px; font-weight:700; border:none; border-radius:7px; cursor:pointer; font-family:inherit; background:var(--primary); color:#fff; }
+    .search-btn:active { transform:scale(.97); }
+    #searchResults { overflow-y:auto; flex:1; }
+    .search-result-item { padding:10px 18px; border-bottom:1px solid #e8eef6; }
+    .search-result-item:last-child { border-bottom:none; }
+    .search-result-date { font-size:11px; color:var(--muted); font-weight:700; margin-bottom:4px; }
+    .search-result-body { display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-size:13px; }
+    .search-r-code { color:var(--primary); font-weight:700; letter-spacing:.08em; min-width:50px; }
+    .search-r-clinic { font-weight:700; }
+    .search-r-item { flex:1; min-width:80px; }
+    .search-r-qty { color:var(--muted); white-space:nowrap; }
+    .search-empty { padding:28px; text-align:center; color:var(--muted); font-size:13px; }
     .btn-sm { padding:5px 11px; font-size:12px; border-radius:5px; }
 
     /* Table */
@@ -222,9 +247,9 @@
       <div class="toolbar-btns">
         <button class="btn btn-primary"   onclick="saveSheet()"><span class="btn-icon">💾</span>保存</button>
         <button class="btn btn-export"    onclick="exportCSV()"><span class="btn-icon">📤</span>CSV出力</button>
-        <button class="btn btn-image"     onclick="exportImage()"><span class="btn-icon">🖼</span>画像で送る</button>
-        <button class="btn btn-secondary" onclick="printSheet()"><span class="btn-icon">🖨</span>印刷</button>
-        <button class="btn btn-danger"    onclick="clearSheet()"><span class="btn-icon">🗑</span>クリア</button>
+        <button class="btn btn-image"   onclick="exportImage()"><span class="btn-icon">🖼</span>画像で送る</button>
+        <button class="btn btn-search"  onclick="openSearch()"><span class="btn-icon">🔍</span>検索</button>
+        <button class="btn btn-danger"  onclick="clearSheet()"><span class="btn-icon">🗑</span>クリア</button>
       </div>
     </div>
     <div class="table-wrapper">
@@ -263,6 +288,22 @@
   </div>
 </div>
 <div id="toast"></div>
+
+<!-- 検索モーダル -->
+<div id="searchModal" class="search-backdrop" style="display:none">
+  <div class="search-modal">
+    <div class="search-head">
+      <span class="search-head-title">🔍 注文履歴検索</span>
+      <button class="search-close" id="searchClose">×</button>
+    </div>
+    <div class="search-form">
+      <input id="searchCode" type="text" placeholder="顧客コード（例：53007）" inputmode="numeric" maxlength="5" autocomplete="off">
+      <input id="searchItem" type="text" placeholder="商品名（一部でもOK）" inputmode="text" autocomplete="off">
+      <button class="search-btn" onclick="execSearch()">🔍 検索する</button>
+    </div>
+    <div id="searchResults"><div class="search-empty">顧客コードか商品名を入力して検索してください</div></div>
+  </div>
+</div>
 
 <script>
   const STORAGE_KEY   = 'dental_orders_v2';
@@ -1082,6 +1123,60 @@
   }
 
   function printSheet() { window.print(); }
+
+  // ── 注文履歴検索
+  function openSearch() {
+    document.getElementById('searchModal').style.display = 'flex';
+    document.getElementById('searchCode').focus();
+  }
+  function closeSearch() {
+    document.getElementById('searchModal').style.display = 'none';
+  }
+  function execSearch() {
+    const code = document.getElementById('searchCode').value.trim();
+    const item = document.getElementById('searchItem').value.trim();
+    if (!code && !item) { showToast('条件を入力してください', 'error'); return; }
+
+    const results = [];
+    loadSaved().forEach(s => {
+      s.rows.forEach(r => {
+        const matchCode = !code || r.code === code;
+        const matchItem = !item  || (r.item || '').includes(item);
+        if (matchCode && matchItem && (r.code || r.item)) {
+          results.push({ date: s.date, code: r.code, clinic: r.clinic, item: r.item, qty: r.qty, note: r.note });
+        }
+      });
+    });
+
+    const el = document.getElementById('searchResults');
+    if (!results.length) {
+      el.innerHTML = '<div class="search-empty">該当する注文履歴がありません</div>';
+      return;
+    }
+    el.innerHTML = results.map(r => `
+      <div class="search-result-item">
+        <div class="search-result-date">📅 ${escHtml(r.date)}</div>
+        <div class="search-result-body">
+          <span class="search-r-code">${escHtml(r.code)}</span>
+          <span class="search-r-clinic">${escHtml(r.clinic)}</span>
+          <span class="search-r-item">${escHtml(r.item)}</span>
+          ${r.qty ? `<span class="search-r-qty">${escHtml(r.qty)}個</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // 検索モーダルを閉じるイベント
+  document.getElementById('searchClose').addEventListener('click', closeSearch);
+  document.getElementById('searchModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('searchModal')) closeSearch();
+  });
+  // Enterキーで検索実行
+  ['searchCode','searchItem'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') execSearch();
+    });
+  });
 
   function escHtml(str) {
     return String(str??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
