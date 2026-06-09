@@ -205,14 +205,24 @@
 
     /* Print */
     @media print {
-      body { background:#fff; padding:0; }
+      @page { size: A4 portrait; margin: 8mm; }
+      body { background:#fff; padding:0; font-size:11px; }
       .no-print { display:none !important; }
       .card { box-shadow:none; border-radius:0; }
-      .header { border-radius:0; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
-      thead th { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+      .header { border-radius:0; print-color-adjust:exact; -webkit-print-color-adjust:exact; padding:8px 14px; }
+      .header h1 { font-size:15px; }
+      .header-date { font-size:10px; }
+      thead th { print-color-adjust:exact; -webkit-print-color-adjust:exact; font-size:10px; padding:5px 4px; }
       .table-wrapper { overflow:visible; }
       table { min-width:unset; }
-      input { border:1px solid #ccc !important; box-shadow:none !important; background:#fff !important; }
+      td { padding:2px 4px; }
+      input[type="text"], input[type="number"] {
+        border:1px solid #ccc !important;
+        box-shadow:none !important;
+        background:#fff !important;
+        font-size:11px !important;
+        padding:3px 5px !important;
+      }
     }
   </style>
 </head>
