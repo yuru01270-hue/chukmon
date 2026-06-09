@@ -312,7 +312,7 @@
   const MASTER_KEY    = 'dental_master';
   const MASTER_VER_KEY = 'dental_master_ver';
   const MASTER_VERSION = 'v5';   // ← データを変えたらここを上げる（v2, v3…）
-  const DEFAULT_ROWS  = 20;
+  const DEFAULT_ROWS  = 30;
 
 
   // 初期顧客マスタデータ（localStorageが空のとき自動投入）
@@ -703,8 +703,9 @@
 
   function setHeaderDate() {
     const now = new Date();
+    const days = ['日','月','火','水','木','金','土'];
     document.getElementById('headerDate').textContent =
-      `${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日`;
+      `${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日（${days[now.getDay()]}）`;
   }
 
   // ── 行生成
