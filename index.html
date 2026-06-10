@@ -1077,7 +1077,8 @@
     ctx.fillText('📋 注文書', PAD, TITLE_H/2);
     const now = new Date();
     ctx.font = fNorm(12); ctx.textAlign = 'right';
-    ctx.fillText(`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`, CANVAS_W-PAD, TITLE_H/2);
+    const days2 = ['日','月','火','水','木','金','土'];
+    ctx.fillText(`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days2[now.getDay()]}）`, CANVAS_W-PAD, TITLE_H/2);
 
     const tableTop = TITLE_H;
     ctx.fillStyle = '#1a56a0';
