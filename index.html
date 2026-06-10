@@ -308,8 +308,9 @@
       <button class="search-close" id="searchClose">×</button>
     </div>
     <div class="search-form">
-      <input id="searchCode" type="text" placeholder="顧客コード（例：53007）" inputmode="numeric" maxlength="5" autocomplete="off">
-      <input id="searchItem" type="text" placeholder="商品名（一部でもOK）" inputmode="text" autocomplete="off">
+      <input id="searchCode"   type="text" placeholder="顧客コード（例：53007）" inputmode="numeric" maxlength="5" autocomplete="off">
+      <input id="searchClinic" type="text" placeholder="歯科医院名（一部でもOK）" inputmode="text" autocomplete="off">
+      <input id="searchItem"   type="text" placeholder="商品名（一部でもOK）" inputmode="text" autocomplete="off">
       <button class="search-btn" onclick="execSearch()">🔍 検索する</button>
     </div>
     <div id="searchResults"><div class="search-empty">顧客コードか商品名を入力して検索してください</div></div>
@@ -1238,16 +1239,18 @@
     document.getElementById('searchModal').style.display = 'none';
   }
   function execSearch() {
-    const code = document.getElementById('searchCode').value.trim();
-    const item = document.getElementById('searchItem').value.trim();
-    if (!code && !item) { showToast('条件を入力してください', 'error'); return; }
+    const code   = document.getElementById('searchCode').value.trim();
+    const clinic = document.getElementById('searchClinic').value.trim();
+    const item   = document.getElementById('searchItem').value.trim();
+    if (!code && !clinic && !item) { showToast('条件を入力してください', 'error'); return; }
 
     const results = [];
     loadSaved().forEach(s => {
       s.rows.forEach(r => {
-        const matchCode = !code || r.code === code;
-        const matchItem = !item  || (r.item || '').includes(item);
-        if (matchCode && matchItem && (r.code || r.item)) {
+        const matchCode   = !code   || r.code === code;
+        const matchClinic = !clinic || (r.clinic || '').includes(clinic);
+        const matchItem   = !item   || (r.item || '').includes(item);
+        if (matchCode && matchClinic && matchItem && (r.code || r.clinic || r.item)) {
           results.push({ date: s.date, code: r.code, clinic: r.clinic, item: r.item, qty: r.qty, note: r.note });
         }
       });
@@ -1277,7 +1280,7 @@
     if (e.target === document.getElementById('searchModal')) closeSearch();
   });
   // Enterキーで検索実行 ＋ 商品名は自動半角変換
-  ['searchCode','searchItem'].forEach(id => {
+  ['searchCode','searchClinic','searchItem'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => {
       if (e.key === 'Enter') execSearch();
     });
