@@ -1072,9 +1072,30 @@
 
     ctx.fillStyle = '#1a56a0';
     ctx.fillRect(0,0,CANVAS_W,TITLE_H);
+    // 歯のイラストをSVG→Imageで描画
+    const toothSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 50">
+      <path d="M8,11 L36,11 C40,11 42,15 42,22 C42,31 39,42 35,46 C34,48 32,48 31,46 C30,44 30,39 28,36 C27,34 25,32.5 22,32.5 C19,32.5 17,34 16,36 C14,39 14,44 13,46 C12,48 10,48 9,46 C5,42 2,31 2,22 C2,15 4,11 8,11 Z" fill="white" opacity="0.96"/>
+      <ellipse cx="12" cy="25" rx="4" ry="2.5" fill="#ffb3c6" opacity="0.55"/>
+      <ellipse cx="32" cy="25" rx="4" ry="2.5" fill="#ffb3c6" opacity="0.55"/>
+      <circle cx="18" cy="20" r="2.2" fill="#1a56a0"/>
+      <circle cx="26" cy="20" r="2.2" fill="#1a56a0"/>
+      <circle cx="18.9" cy="19.1" r="0.9" fill="white"/>
+      <circle cx="26.9" cy="19.1" r="0.9" fill="white"/>
+      <path d="M16.5,26 Q22,31.5 27.5,26" stroke="#a0b8d0" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M11,8 L33,8" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+    </svg>`;
+    const toothBlob = new Blob([toothSvg], {type:'image/svg+xml'});
+    const toothUrl = URL.createObjectURL(toothBlob);
+    const toothImg = new Image();
+    await new Promise(res => { toothImg.onload = res; toothImg.src = toothUrl; });
+    const tH = TITLE_H - 8;
+    const tW = Math.round(tH * 44/50);
+    ctx.drawImage(toothImg, PAD, (TITLE_H - tH)/2, tW, tH);
+    URL.revokeObjectURL(toothUrl);
+
     ctx.fillStyle = '#fff';
     ctx.font = fBold(18); ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-    ctx.fillText('📋 注文書', PAD, TITLE_H/2);
+    ctx.fillText('歯科注文書', PAD + tW + 8, TITLE_H/2);
     const now = new Date();
     ctx.font = fNorm(12); ctx.textAlign = 'right';
     const days2 = ['日','月','火','水','木','金','土'];
