@@ -71,11 +71,12 @@
 
     /* Table */
     .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    table { width:100%; border-collapse:collapse; min-width:648px; table-layout:fixed; }
+    table { width:100%; border-collapse:collapse; min-width:688px; table-layout:fixed; }
     col.col-no   { width:36px; }
     col.col-code { width:88px; }
     col.col-name { width:110px; }
-    col.col-item { width:240px; }
+    col.col-item { width:200px; }
+    col.col-spec { width:80px; }
     col.col-qty  { width:64px; }
     col.col-note { width:110px; }
     thead th { background:var(--primary); color:#fff; font-size:12px; font-weight:700; padding:10px 8px; text-align:center; white-space:nowrap; position:sticky; top:0; z-index:2; }
@@ -266,12 +267,12 @@
       <table id="orderTable">
         <colgroup>
           <col class="col-no"><col class="col-code"><col class="col-name">
-          <col class="col-item"><col class="col-qty"><col class="col-note">
+          <col class="col-item"><col class="col-spec"><col class="col-qty"><col class="col-note">
         </colgroup>
         <thead>
           <tr>
             <th>No.</th><th>顧客<br>コード</th><th>歯科医院名</th>
-            <th>商品名</th><th>個数</th><th>備考</th>
+            <th>商品名</th><th>規格</th><th>個数</th><th>備考</th>
           </tr>
         </thead>
         <tbody id="orderBody"></tbody>
@@ -295,6 +296,17 @@
       <button class="btn btn-export btn-sm" onclick="addMasterEntryUI()">＋ 登録</button>
     </div>
     <div id="masterList"></div>
+  </div>
+
+  <!-- 商品マスタ -->
+  <div class="master-panel no-print">
+    <div class="master-header">📦 商品マスタ（正式名称の登録 → 予測変換の先頭に表示）</div>
+    <div class="master-add">
+      <span class="master-add-label">商品名</span>
+      <input type="text" id="itemMasterInput" class="master-name-inp" placeholder="正式な商品名を入力" inputmode="text" autocomplete="off">
+      <button class="btn btn-export btn-sm" onclick="addItemMasterUI()">＋ 登録</button>
+    </div>
+    <div id="itemMasterList"></div>
   </div>
 </div>
 <div id="toast"></div>
@@ -320,6 +332,7 @@
 <script>
   const STORAGE_KEY   = 'dental_orders_v2';
   const PRODUCTS_KEY  = 'dental_products';
+  const ITEMS_KEY     = 'dental_items_master';
   const MASTER_KEY    = 'dental_master';
   const MASTER_VER_KEY = 'dental_master_ver';
   const MASTER_VERSION = 'v5';   // ← データを変えたらここを上げる（v2, v3…）
@@ -544,8 +557,10 @@
     acMode = 'product'; acCodeRef = null;
     acInput = input;
     const val = input.value.trim();
-    const products = getProducts();
-    acItems = (val ? products.filter(p => p.includes(val)) : products).slice(0, 20);
+    const master = getItemsMaster();
+    const history = getProducts();
+    const merged = [...master, ...history.filter(h => !master.includes(h))];
+    acItems = (val ? merged.filter(p => p.includes(val)) : merged).slice(0, 20);
     acItemsFull = acItems.map(() => null);
 
     if (!acItems.length) { hideAC(); return; }
@@ -664,6 +679,7 @@
       localStorage.setItem(MASTER_VER_KEY, MASTER_VERSION);
     }
     renderMasterPanel();
+    renderItemsMasterPanel();
     // マスタ登録フォームのコードinputは数字のみ
     document.getElementById('masterCodeInput').addEventListener('input', function() {
       this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);
@@ -674,6 +690,9 @@
     });
     document.getElementById('masterCodeInput').addEventListener('keydown', e => {
       if (e.key === 'Enter') addMasterEntryUI();
+    });
+    document.getElementById('itemMasterInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addItemMasterUI();
     });
   }
 
@@ -734,12 +753,13 @@
       <td><input type="text" class="code-input" placeholder="00000" maxlength="5" inputmode="numeric" autocomplete="off"></td>
       <td><input type="text" inputmode="text" placeholder="医院名"></td>
       <td><input type="text" class="item-input" inputmode="text" placeholder="商品名"></td>
+      <td><input type="text" class="spec-input" inputmode="text" placeholder="規格" autocomplete="off"></td>
       <td><input type="text" class="qty-input" placeholder="0" maxlength="4" inputmode="numeric" autocomplete="off"></td>
       <td><input type="text" inputmode="text" placeholder="備考"></td>
     `;
 
     const inputs = tr.querySelectorAll('input');
-    const [codeInput, nameInput, itemInput, qtyInput, noteInput] = inputs;
+    const [codeInput, nameInput, itemInput, specInput, qtyInput, noteInput] = inputs;
 
     // 顧客コード：数字のみ ＋ 5桁揃ったら医院名を自動入力
     codeInput.addEventListener('input', () => {
@@ -776,7 +796,8 @@
       else if (e.key === 'Escape') { hideAC(); }
     });
 
-    // 備考：カタカナ・アルファベットを自動半角化
+    // 規格・備考：カタカナ・アルファベットを自動半角化
+    addHalfWidthHandlers(specInput);
     addHalfWidthHandlers(noteInput);
 
     // 個数：数字のみ（全角→半角変換）
@@ -843,6 +864,61 @@
     list.unshift(name);
     list = list.slice(0, 200);
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(list));
+  }
+
+  // ── 商品マスタ（localStorage: dental_items_master）
+  function getItemsMaster() {
+    try { return JSON.parse(localStorage.getItem(ITEMS_KEY)) || []; }
+    catch { return []; }
+  }
+  function saveItemMaster(name) {
+    const list = getItemsMaster();
+    if (list.includes(name)) { showToast('すでに登録されています'); return false; }
+    list.push(name); list.sort();
+    localStorage.setItem(ITEMS_KEY, JSON.stringify(list));
+    return true;
+  }
+  function deleteItemMaster(idx) {
+    const list = getItemsMaster(); list.splice(idx, 1);
+    localStorage.setItem(ITEMS_KEY, JSON.stringify(list));
+  }
+
+  function renderItemsMasterPanel() {
+    const list = getItemsMaster();
+    const el = document.getElementById('itemMasterList');
+    if (!list.length) {
+      el.innerHTML = '<div class="empty-msg">登録がありません。正式な商品名を追加してください。</div>';
+      return;
+    }
+    el.innerHTML = '';
+    list.forEach((name, i) => {
+      const div = document.createElement('div');
+      div.className = 'master-item';
+      div.innerHTML = `<span class="master-item-name">${escHtml(name)}</span><button class="btn btn-danger btn-sm" data-iidx="${i}">削除</button>`;
+      el.appendChild(div);
+    });
+    el.querySelectorAll('[data-iidx]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.iidx);
+        const name = getItemsMaster()[idx];
+        if (!name) return;
+        if (!confirm(`「${name}」を削除しますか？`)) return;
+        deleteItemMaster(idx);
+        renderItemsMasterPanel();
+        showToast('削除しました');
+      });
+    });
+  }
+
+  function addItemMasterUI() {
+    const inp = document.getElementById('itemMasterInput');
+    const name = inp.value.trim();
+    if (!name) { showToast('商品名を入力してください', 'error'); inp.focus(); return; }
+    if (saveItemMaster(name)) {
+      inp.value = '';
+      renderItemsMasterPanel();
+      showToast(`「${name}」を登録しました`, 'success');
+    }
   }
 
   // ── 顧客マスタ（localStorage: dental_master）
@@ -921,7 +997,7 @@
   function getRows() {
     return [...document.querySelectorAll('#orderBody tr')].map(tr => {
       const inp = tr.querySelectorAll('input');
-      return { code:inp[0].value.trim(), clinic:inp[1].value.trim(), item:inp[2].value.trim(), qty:inp[3].value, note:inp[4].value.trim() };
+      return { code:inp[0].value.trim(), clinic:inp[1].value.trim(), item:inp[2].value.trim(), spec:inp[3].value.trim(), qty:inp[4].value, note:inp[5].value.trim() };
     });
   }
   function setRows(rows) {
@@ -930,7 +1006,7 @@
     rows.forEach((r, i) => {
       const inp = document.getElementById('orderBody').rows[i].querySelectorAll('input');
       inp[0].value = r.code||''; inp[1].value = r.clinic||''; inp[2].value = r.item||'';
-      inp[3].value = r.qty||'';  inp[4].value = r.note||'';
+      inp[3].value = r.spec||''; inp[4].value = r.qty||'';    inp[5].value = r.note||'';
     });
   }
 
@@ -939,7 +1015,7 @@
     let hasEntry = false, codeError = false;
     document.querySelectorAll('#orderBody tr').forEach(tr => {
       const inp = tr.querySelectorAll('input');
-      const code=inp[0].value.trim(), clinic=inp[1].value.trim(), item=inp[2].value.trim(), qty=inp[3].value;
+      const code=inp[0].value.trim(), clinic=inp[1].value.trim(), item=inp[2].value.trim(), qty=inp[4].value;
       if (code||clinic||item||qty) hasEntry = true;
       if (code && code.length !== 5) { inp[0].classList.add('invalid'); codeError = true; }
     });
@@ -1039,6 +1115,7 @@
       { label:'顧客コード', minW:88,  align:'center' },
       { label:'歯科医院名', minW:100, align:'left'   },
       { label:'商品名',   minW:120, align:'left'   },
+      { label:'規格',     minW:70,  align:'left'   },
       { label:'個数',     minW:50,  align:'center' },
       { label:'備考',     minW:80,  align:'left'   },
     ];
@@ -1051,7 +1128,7 @@
       tmp.font = fBold(12);
       let max = tmp.measureText(col.label).width;
       rows.forEach((row, ri) => {
-        const val = String([ri+1, row.code, row.clinic, row.item, row.qty, row.note][ci] ?? '');
+        const val = String([ri+1, row.code, row.clinic, row.item, row.spec, row.qty, row.note][ci] ?? '');
         tmp.font = fNorm(13);
         max = Math.max(max, tmp.measureText(val).width);
       });
@@ -1119,7 +1196,7 @@
 
     rows.forEach((row, i) => {
       const y = tableTop + HEAD_H + i*ROW_H;
-      const vals = [i+1, row.code, row.clinic, row.item, row.qty, row.note];
+      const vals = [i+1, row.code, row.clinic, row.item, row.spec, row.qty, row.note];
       ctx.fillStyle = i%2===0 ? '#ffffff' : '#f0f5fc';
       ctx.fillRect(PAD, y, TABLE_W, ROW_H);
       ctx.strokeStyle = '#d8e4f0'; ctx.lineWidth = 1;
@@ -1211,8 +1288,8 @@
   function exportCSV() {
     const rows = getRows().filter(r => r.code||r.clinic||r.item||r.qty);
     if (!rows.length) { showToast('エクスポートするデータがありません','error'); return; }
-    const headers = ['No.','顧客コード','歯科医院名','商品名','個数','備考'];
-    const csvRows = [headers, ...rows.map((r,i)=>[i+1,r.code,r.clinic,r.item,r.qty,r.note])];
+    const headers = ['No.','顧客コード','歯科医院名','商品名','規格','個数','備考'];
+    const csvRows = [headers, ...rows.map((r,i)=>[i+1,r.code,r.clinic,r.item,r.spec,r.qty,r.note])];
     const escape = v => '"'+String(v??'').replace(/"/g,'""')+'"';
     const csvText = '﻿' + csvRows.map(r=>r.map(escape).join(',')).join('\r\n');
     const now = new Date();
@@ -1246,12 +1323,15 @@
 
     const results = [];
     loadSaved().forEach(s => {
+      let lastClinic = '';
       s.rows.forEach(r => {
+        const effectiveClinic = r.clinic || lastClinic;
+        if (r.clinic) lastClinic = r.clinic;
         const matchCode   = !code   || r.code === code;
-        const matchClinic = !clinic || (r.clinic || '').includes(clinic);
+        const matchClinic = !clinic || effectiveClinic.includes(clinic);
         const matchItem   = !item   || (r.item || '').includes(item);
-        if (matchCode && matchClinic && matchItem && (r.code || r.clinic || r.item)) {
-          results.push({ date: s.date, code: r.code, clinic: r.clinic, item: r.item, qty: r.qty, note: r.note });
+        if (matchCode && matchClinic && matchItem && (r.code || effectiveClinic || r.item)) {
+          results.push({ date: s.date, code: r.code, clinic: effectiveClinic, item: r.item, qty: r.qty, note: r.note });
         }
       });
     });
