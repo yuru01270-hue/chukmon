@@ -697,7 +697,15 @@
 
   // ドロップダウンのクリック／タッチ
   acEl.addEventListener('mousedown', e => { e.preventDefault(); }); // blur防止（PC）
+  let _acTouchY = 0, _acTouchX = 0;
+  acEl.addEventListener('touchstart', e => {
+    _acTouchY = e.touches[0].clientY;
+    _acTouchX = e.touches[0].clientX;
+  }, { passive: true });
   acEl.addEventListener('touchend', e => {                          // タップ選択（スマホ）
+    const dy = Math.abs(e.changedTouches[0].clientY - _acTouchY);
+    const dx = Math.abs(e.changedTouches[0].clientX - _acTouchX);
+    if (dy > 8 || dx > 8) return;   // 指が動いた＝スクロール、選択しない
     const item = e.target.closest('.ac-item');
     if (item) { e.preventDefault(); selectAC(Number(item.dataset.i)); }
   });
