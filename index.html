@@ -71,12 +71,11 @@
 
     /* Table */
     .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    table { width:100%; border-collapse:collapse; min-width:688px; table-layout:fixed; }
+    table { width:100%; border-collapse:collapse; min-width:648px; table-layout:fixed; }
     col.col-no   { width:36px; }
     col.col-code { width:88px; }
     col.col-name { width:110px; }
-    col.col-item { width:200px; }
-    col.col-spec { width:80px; }
+    col.col-item { width:240px; }
     col.col-qty  { width:64px; }
     col.col-note { width:110px; }
     thead th { background:var(--primary); color:#fff; font-size:12px; font-weight:700; padding:10px 8px; text-align:center; white-space:nowrap; position:sticky; top:0; z-index:2; }
@@ -267,12 +266,12 @@
       <table id="orderTable">
         <colgroup>
           <col class="col-no"><col class="col-code"><col class="col-name">
-          <col class="col-item"><col class="col-spec"><col class="col-qty"><col class="col-note">
+          <col class="col-item"><col class="col-qty"><col class="col-note">
         </colgroup>
         <thead>
           <tr>
             <th>No.</th><th>顧客<br>コード</th><th>歯科医院名</th>
-            <th>商品名</th><th>規格</th><th>個数</th><th>備考</th>
+            <th>商品名</th><th>個数</th><th>備考</th>
           </tr>
         </thead>
         <tbody id="orderBody"></tbody>
@@ -808,13 +807,12 @@
       <td><input type="text" class="code-input" placeholder="00000" maxlength="5" inputmode="numeric" autocomplete="off"></td>
       <td><input type="text" inputmode="text" placeholder="医院名"></td>
       <td><input type="text" class="item-input" inputmode="text" placeholder="商品名"></td>
-      <td><input type="text" class="spec-input" inputmode="text" placeholder="規格" autocomplete="off"></td>
       <td><input type="text" class="qty-input" placeholder="0" maxlength="4" inputmode="numeric" autocomplete="off"></td>
       <td><input type="text" inputmode="text" placeholder="備考"></td>
     `;
 
     const inputs = tr.querySelectorAll('input');
-    const [codeInput, nameInput, itemInput, specInput, qtyInput, noteInput] = inputs;
+    const [codeInput, nameInput, itemInput, qtyInput, noteInput] = inputs;
 
     // 顧客コード：数字のみ ＋ 5桁揃ったら医院名を自動入力
     codeInput.addEventListener('input', () => {
@@ -851,8 +849,7 @@
       else if (e.key === 'Escape') { hideAC(); }
     });
 
-    // 規格・備考：カタカナ・アルファベットを自動半角化
-    addHalfWidthHandlers(specInput);
+    // 備考：カタカナ・アルファベットを自動半角化
     addHalfWidthHandlers(noteInput);
 
     // 個数：数字のみ（全角→半角変換）
@@ -1052,7 +1049,7 @@
   function getRows() {
     return [...document.querySelectorAll('#orderBody tr')].map(tr => {
       const inp = tr.querySelectorAll('input');
-      return { code:inp[0].value.trim(), clinic:inp[1].value.trim(), item:inp[2].value.trim(), spec:inp[3].value.trim(), qty:inp[4].value, note:inp[5].value.trim() };
+      return { code:inp[0].value.trim(), clinic:inp[1].value.trim(), item:inp[2].value.trim(), qty:inp[3].value, note:inp[4].value.trim() };
     });
   }
   function setRows(rows) {
@@ -1061,7 +1058,7 @@
     rows.forEach((r, i) => {
       const inp = document.getElementById('orderBody').rows[i].querySelectorAll('input');
       inp[0].value = r.code||''; inp[1].value = r.clinic||''; inp[2].value = r.item||'';
-      inp[3].value = r.spec||''; inp[4].value = r.qty||'';    inp[5].value = r.note||'';
+      inp[3].value = r.qty||'';  inp[4].value = r.note||'';
     });
   }
 
@@ -1070,7 +1067,7 @@
     let hasEntry = false, codeError = false;
     document.querySelectorAll('#orderBody tr').forEach(tr => {
       const inp = tr.querySelectorAll('input');
-      const code=inp[0].value.trim(), clinic=inp[1].value.trim(), item=inp[2].value.trim(), qty=inp[4].value;
+      const code=inp[0].value.trim(), clinic=inp[1].value.trim(), item=inp[2].value.trim(), qty=inp[3].value;
       if (code||clinic||item||qty) hasEntry = true;
       if (code && code.length !== 5) { inp[0].classList.add('invalid'); codeError = true; }
     });
@@ -1170,7 +1167,6 @@
       { label:'顧客コード', minW:88,  align:'center' },
       { label:'歯科医院名', minW:100, align:'left'   },
       { label:'商品名',   minW:120, align:'left'   },
-      { label:'規格',     minW:70,  align:'left'   },
       { label:'個数',     minW:50,  align:'center' },
       { label:'備考',     minW:80,  align:'left'   },
     ];
@@ -1183,7 +1179,7 @@
       tmp.font = fBold(12);
       let max = tmp.measureText(col.label).width;
       rows.forEach((row, ri) => {
-        const val = String([ri+1, row.code, row.clinic, row.item, row.spec, row.qty, row.note][ci] ?? '');
+        const val = String([ri+1, row.code, row.clinic, row.item, row.qty, row.note][ci] ?? '');
         tmp.font = fNorm(13);
         max = Math.max(max, tmp.measureText(val).width);
       });
@@ -1251,7 +1247,7 @@
 
     rows.forEach((row, i) => {
       const y = tableTop + HEAD_H + i*ROW_H;
-      const vals = [i+1, row.code, row.clinic, row.item, row.spec, row.qty, row.note];
+      const vals = [i+1, row.code, row.clinic, row.item, row.qty, row.note];
       ctx.fillStyle = i%2===0 ? '#ffffff' : '#f0f5fc';
       ctx.fillRect(PAD, y, TABLE_W, ROW_H);
       ctx.strokeStyle = '#d8e4f0'; ctx.lineWidth = 1;
@@ -1343,8 +1339,8 @@
   function exportCSV() {
     const rows = getRows().filter(r => r.code||r.clinic||r.item||r.qty);
     if (!rows.length) { showToast('エクスポートするデータがありません','error'); return; }
-    const headers = ['No.','顧客コード','歯科医院名','商品名','規格','個数','備考'];
-    const csvRows = [headers, ...rows.map((r,i)=>[i+1,r.code,r.clinic,r.item,r.spec,r.qty,r.note])];
+    const headers = ['No.','顧客コード','歯科医院名','商品名','個数','備考'];
+    const csvRows = [headers, ...rows.map((r,i)=>[i+1,r.code,r.clinic,r.item,r.qty,r.note])];
     const escape = v => '"'+String(v??'').replace(/"/g,'""')+'"';
     const csvText = '﻿' + csvRows.map(r=>r.map(escape).join(',')).join('\r\n');
     const now = new Date();
